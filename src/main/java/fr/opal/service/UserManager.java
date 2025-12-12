@@ -58,6 +58,7 @@ public class UserManager {
         {
             User user = connectedUsers.get(id);
             if (user.getPassword().equalsIgnoreCase(pass)) {
+                Logger.getLogger("UserManager").info("User already connected: " + id);
                 connectedUser = user;
                 connectedUsers.put(id, user);
                 return true;
@@ -67,6 +68,7 @@ public class UserManager {
         {
             User user = factory.createUserDAO().getUserById(id);
             if (user != null && user.getPassword().equalsIgnoreCase(pass)) {
+                Logger.getLogger("UserManager").info("User logged in: " + id);
                 connectedUser = user;
                 connectedUsers.put(id, user);
                 return true;

@@ -26,7 +26,7 @@ public abstract class AbstractFactory {
         if (instance != null) {
             return instance;
         }
-        instance = new PostgresFactory();
+        instance = new MySQLFactory();
         return instance;
     }
 

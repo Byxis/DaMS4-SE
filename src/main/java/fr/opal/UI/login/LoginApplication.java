@@ -1,5 +1,6 @@
 package fr.opal.UI.login;
 
+import fr.opal.service.SceneManager;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -9,12 +10,15 @@ import java.io.IOException;
 
 
 public class LoginApplication extends Application {
+
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(LoginApplication.class.getResource("/fr/opal/login-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load());
+        SceneManager sceneManager = SceneManager.getInstance();
+        sceneManager.initialize(stage);
+
+        sceneManager.switchTo("/fr/opal/login-view.fxml");
+
         stage.setTitle("Opal");
-        stage.setScene(scene);
         stage.show();
     }
 }

@@ -2,20 +2,19 @@ package fr.opal.dao;
 
 import fr.opal.type.User;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
+import java.sql.*;
 
 /**
  *
  */
-public class PostgresUserDAO extends UserDAO
+public class MySQLUserDAO extends UserDAO
 {
     private Connection conn;
 
     /**
      * Default constructor
      */
-    public PostgresUserDAO(Connection _conn)
+    public MySQLUserDAO(Connection _conn)
     {
         super();
         this.conn = _conn;
@@ -47,19 +46,23 @@ public class PostgresUserDAO extends UserDAO
 
     public User createUser(String username, String password)
     {
-        String sql = "INSERT INTO users (username, password) VALUES (?, ?) RETURNING id";
-        try (PreparedStatement ps = conn.prepareStatement(sql))
+        String sql = "INSERT INTO users(username, password) VALUES (?, ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS))
         {
             ps.setString(1, username);
             ps.setString(2, password);
-            var rs = ps.executeQuery();
-            if (rs.next())
+            ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys())
             {
-                int id = rs.getInt("id");
-                return new User(id, username, password);
+                if (rs.next())
+                {
+                    int id = rs.getInt(1);
+                    return new User(id, username, password);
+                }
             }
         }
-        catch (Exception e)
+        catch (SQLException e)
         {
             e.printStackTrace();
         }
