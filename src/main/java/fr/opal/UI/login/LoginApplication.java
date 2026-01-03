@@ -2,8 +2,7 @@ package fr.opal.UI.login;
 
 import fr.opal.service.SceneManager;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -19,6 +18,14 @@ public class LoginApplication extends Application {
         sceneManager.switchTo("/fr/opal/login-view.fxml");
 
         stage.setTitle("Opal");
+        stage.setWidth(600);
+        stage.setHeight(400);
+        stage.setMinWidth(600);
+        stage.setMinHeight(400);
+
+        Image icon = new Image(getClass().getResourceAsStream("/fr/opal/opal-icon.png"));
+        stage.getIcons().add(icon);
+
         stage.show();
     }
 }

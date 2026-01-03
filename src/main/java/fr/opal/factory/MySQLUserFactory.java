@@ -10,7 +10,7 @@ import java.sql.*;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-public class MySQLFactory extends AbstractFactory
+public class MySQLUserFactory extends AbstractUserFactory
 {
     private static final String URL;
     private static final String USER;
@@ -52,7 +52,7 @@ public class MySQLFactory extends AbstractFactory
         return props;
     }
 
-    public MySQLFactory()
+    public MySQLUserFactory()
     {
         super();
         createConnection();

@@ -1,13 +1,10 @@
 package fr.opal.type;
 
 /**
- * 
+ * Represents a user
  */
 public class User {
 
-    /**
-     *
-     */
     private int id;
     private String username;
     private String password;
@@ -27,8 +24,13 @@ public class User {
         return id;
     }
 
-    public String getPassword()
+    public String getUsername()
     {
-        return password;
+        return username;
+    }
+
+    public boolean verifyPassword(String password)
+    {
+        return this.password.equals(password);
     }
 }

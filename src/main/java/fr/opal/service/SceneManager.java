@@ -17,9 +17,6 @@ public class SceneManager {
     private Stage primaryStage;
     private final Map<String, CachedScene> cache = new HashMap<>();
 
-    private double defaultWidth = 800;
-    private double defaultHeight = 600;
-
     private SceneManager() {}
 
     public static SceneManager getInstance() {
@@ -39,12 +36,20 @@ public class SceneManager {
         if (cached == null) {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
-            Scene scene = new Scene(root, defaultWidth, defaultHeight);
+            
+            double width = root.prefWidth(-1);
+            double height = root.prefHeight(-1);
+            
+            if (width <= 0) width = 600;
+            if (height <= 0) height = 400;
+            
+            Scene scene = new Scene(root, width, height);
 
             cached = new CachedScene(scene, loader.getController());
             cache.put(fxmlPath, cached);
         }
 
         primaryStage.setScene(cached.getScene());
+        primaryStage.sizeToScene();
     }
 }

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<DialogPane prefWidth="400.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
+    <header>
+        <VBox style="-fx-padding: 20 20 0 20; -fx-spacing: 5;">
+            <children>
+                <Label style="-fx-font-size: 24; -fx-font-weight: bold;" text="User Profile" />
+                <Label style="-fx-text-fill: #666666;" text="Edit your personal information below." />
+            </children>
+        </VBox>
+    </header>
+    <content>
+        <VBox spacing="15.0" style="-fx-padding: 20;">
+            <children>
+                <VBox spacing="5.0">
+                    <children>
+                        <Label style="-fx-font-weight: bold;" text="Username" />
+                        <TextField fx:id="usernameField" editable="false" prefHeight="40.0" styleClass="text-field" />
+                    </children>
+                </VBox>
+                <VBox spacing="5.0">
+                    <children>
+                        <Label style="-fx-font-weight: bold;" text="Email" />
+                        <TextField fx:id="emailField" prefHeight="40.0" promptText="Enter your email" />
+                    </children>
+                </VBox>
+                <VBox spacing="5.0">
+                    <children>
+                        <Label style="-fx-font-weight: bold;" text="First Name" />
+                        <TextField fx:id="firstNameField" prefHeight="40.0" promptText="Enter first name" />
+                    </children>
+                </VBox>
+                <VBox spacing="5.0">
+                    <children>
+                        <Label style="-fx-font-weight: bold;" text="Last Name" />
+                        <TextField fx:id="lastNameField" prefHeight="40.0" promptText="Enter last name" />
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+    </content>
+    <buttonTypes>
+        <ButtonType fx:constant="OK" />
+        <ButtonType fx:constant="CANCEL" />
+    </buttonTypes>
+</DialogPane>
