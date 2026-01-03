@@ -5,28 +5,29 @@ import fr.opal.dao.UserDAO;
 /**
  * 
  */
-public abstract class AbstractFactory {
+public abstract class AbstractUserFactory
+{
 
     /**
      * Default constructor
      */
-    public AbstractFactory() {
+    public AbstractUserFactory() {
     }
 
     /**
      * 
      */
-    private static AbstractFactory instance;
+    private static AbstractUserFactory instance;
 
 
     /**
      * @return
      */
-    synchronized public static AbstractFactory getInstance() {
+    synchronized public static AbstractUserFactory getInstance() {
         if (instance != null) {
             return instance;
         }
-        instance = new MySQLFactory();
+        instance = new MySQLUserFactory();
         return instance;
     }
 
