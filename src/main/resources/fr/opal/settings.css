@@ -1,0 +1,31 @@
+/* ========================================
+   SETTINGS / SESSION PROPERTIES - Specific styles
+   ======================================== */
+
+.settings-container {
+    -fx-spacing: 20;
+    -fx-padding: 20;
+}
+
+.theme-radio {
+    -fx-text-fill: -fx-theme-text;
+}
+
+.theme-radio .radio {
+    -fx-background-color: -fx-theme-input-bg;
+    -fx-border-color: -fx-theme-input-border;
+}
+
+.font-size-value {
+    -fx-text-fill: -fx-theme-text-muted;
+    -fx-font-size: 12;
+}
+
+.font-slider {
+    -fx-control-inner-background: -fx-theme-border;
+}
+
+.font-slider .track {
+    -fx-background-color: -fx-theme-border;
+    -fx-background-radius: 4;
+}

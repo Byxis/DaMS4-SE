@@ -1,47 +1,308 @@
+/* ========================================
+   THEME VARIABLES - Global CSS System
+   Usage: All components inherit from these variables
+   ======================================== */
 
 .root {
     -fx-font-family: "Google Sans Flex";
+
+    /* Theme Colors - Light Mode (Default) */
+    -fx-theme-bg: #ffffff;
+    -fx-theme-bg-secondary: #f8f8f8;
+    -fx-theme-border: #e0e0e0;
+    -fx-theme-text: #2d2d2d;
+    -fx-theme-text-secondary: #666666;
+    -fx-theme-text-muted: #888888;
+    -fx-theme-input-bg: #f8f8f8;
+    -fx-theme-input-border: #999999;
+
+    /* Accent Color - Can be overridden inline */
+    -fx-accent-color: #2d2d2d;
 }
 
-.hyperlink, .button, .text-field {
+/* Dark Theme Override */
+.dark {
+    -fx-theme-bg: #1e1e1e;
+    -fx-theme-bg-secondary: #2d2d2d;
+    -fx-theme-border: #404040;
+    -fx-theme-text: #ffffff;
+    -fx-theme-text-secondary: #cccccc;
+    -fx-theme-text-muted: #888888;
+    -fx-theme-input-bg: #3d3d3d;
+    -fx-theme-input-border: #555555;
+}
+
+/* ========================================
+   BASE COMPONENTS - Auto-styled
+   ======================================== */
+
+/* Containers */
+.main-container,
+AnchorPane,
+VBox,
+HBox,
+BorderPane,
+StackPane,
+ScrollPane {
+    -fx-background-color: -fx-theme-bg;
+}
+
+/* Labels */
+.label {
+    -fx-text-fill: -fx-theme-text;
+}
+
+.subtitle-label {
+    -fx-text-fill: -fx-theme-text-secondary;
+    -fx-font-size: 14;
+}
+
+.muted-label {
+    -fx-text-fill: -fx-theme-text-muted;
+    -fx-font-size: 12;
+}
+
+.title-label {
+    -fx-font-weight: bold;
+    -fx-font-size: 16;
+    -fx-text-fill: -fx-theme-text;
+}
+
+.title-large {
+    -fx-font-size: 32;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-theme-text;
+}
+
+/* Text Fields */
+.text-field,
+.password-field {
+    -fx-background-color: -fx-theme-input-bg;
+    -fx-text-fill: -fx-theme-text;
+    -fx-prompt-text-fill: -fx-theme-text-muted;
+    -fx-background-insets: 0;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: -fx-theme-input-border;
+    -fx-border-width: 1;
+    -fx-padding: 12;
     -fx-focus-color: #999999;
     -fx-faint-focus-color: transparent;
 }
 
-.text-field {
-    -fx-background-color: #F8F8F8;
-
-    /* Supprime toutes les ombres et décalages par défaut */
-    -fx-background-insets: 0;
-
-    /* Arrondis des angles */
-    -fx-background-radius: 10;
-    -fx-border-radius: 10;
-
-    /* Bordure fine et unie (supprime l'effet 3D en haut) */
-    -fx-border-color: #999999;
-    -fx-border-width: 1;
-
-    /* Espace intérieur pour le texte */
-    -fx-padding: 12;
-}
-
-.hyperlink {
-    -fx-underline: true;
-    -fx-cursor: hand;
-    -fx-border-radius: 0;
-    -fx-text-fill: black;
-}
-
-.button {
-    -fx-background-color: #2D2D2D;
+/* Buttons */
+.button,
+.primary-button {
+    -fx-background-color: derive(-fx-accent-color, 0%);
     -fx-text-fill: white;
     -fx-font-size: 13px;
     -fx-font-weight: bold;
     -fx-background-radius: 8;
     -fx-cursor: hand;
+    -fx-focus-color: #999999;
+    -fx-faint-focus-color: transparent;
 }
-.button:focused{
-    -fx-background-color: #999999;
 
+.button:focused,
+.primary-button:focused {
+    -fx-background-color: derive(-fx-accent-color, 10%);
+}
+
+.button:hover,
+.primary-button:hover {
+    -fx-background-color: derive(-fx-accent-color, 5%);
+}
+
+.dark .button,
+.dark .primary-button {
+    -fx-background-color: derive(-fx-accent-color, 20%);
+}
+
+.dark .button:focused,
+.dark .primary-button:focused {
+    -fx-background-color: derive(-fx-accent-color, 30%);
+}
+
+.dark .button:hover,
+.dark .primary-button:hover {
+    -fx-background-color: derive(-fx-accent-color, 25%);
+}
+
+.secondary-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -fx-theme-text;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+}
+
+/* Hyperlinks */
+.hyperlink {
+    -fx-text-fill: -fx-theme-text;
+    -fx-underline: true;
+    -fx-cursor: hand;
+    -fx-border-radius: 0;
+    -fx-focus-color: #999999;
+    -fx-faint-focus-color: transparent;
+}
+
+/* ========================================
+   LAYOUT COMPONENTS
+   ======================================== */
+
+.header-bar {
+    -fx-background-color: -fx-theme-bg;
+    -fx-border-color: -fx-theme-border;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0 25;
+}
+
+/* Navbar action buttons (settings, logout) */
+.navbar-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -fx-theme-text;
+    -fx-font-size: 24px;
+    -fx-min-width: 50;
+    -fx-min-height: 50;
+    -fx-cursor: hand;
+    -fx-padding: 10;
+}
+
+.navbar-button:hover {
+    -fx-background-color: -fx-theme-bg-secondary;
+    -fx-background-radius: 8;
+}
+
+.profile-button {
+    -fx-background-color: derive(-fx-accent-color, 0%);
+    -fx-text-fill: white;
+    -fx-background-radius: 50;
+    -fx-min-width: 45;
+    -fx-min-height: 45;
+    -fx-font-size: 18;
+}
+
+.dark .profile-button {
+    -fx-background-color: derive(-fx-accent-color, 20%);
+}
+
+/* ========================================
+   DIALOG STYLES
+   ======================================== */
+
+.dialog-pane {
+    -fx-background-color: -fx-theme-bg;
+    -fx-padding: 15;
+    -fx-border-width: 1;
+    -fx-border-color: -fx-theme-border;
+}
+
+.dialog-pane .label {
+    -fx-text-fill: -fx-theme-text;
+}
+
+.dialog-pane .content {
+    -fx-padding: 10;
+    -fx-background-color: -fx-theme-bg;
+}
+
+.dialog-pane:header .header-panel {
+    -fx-background-color: -fx-theme-bg;
+    -fx-border-color: -fx-theme-border;
+}
+
+.dialog-pane:header .header-panel .label,
+.dialog-pane:header .header-panel .text {
+    -fx-text-fill: -fx-theme-text;
+}
+
+.dialog-pane VBox {
+    -fx-background-color: -fx-theme-bg;
+}
+
+.dialog-content {
+    -fx-background-color: -fx-theme-bg;
+}
+
+.dialog-content .label {
+    -fx-text-fill: -fx-theme-text;
+}
+
+.dialog-content VBox {
+    -fx-background-color: -fx-theme-bg;
+}
+
+/* ========================================
+   FORM COMPONENTS (Radio, Slider, etc.)
+   ======================================== */
+
+.radio-button {
+    -fx-text-fill: -fx-theme-text;
+}
+
+.radio-button .radio {
+    -fx-background-color: -fx-theme-bg;
+    -fx-border-color: -fx-theme-text-muted;
+    -fx-border-width: 2;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 3;
+}
+
+.radio-button:selected .radio {
+    -fx-border-color: -fx-accent-color;
+}
+
+.radio-button .radio .dot {
+    -fx-background-color: transparent;
+    -fx-background-radius: 5;
+}
+
+.radio-button:selected .radio .dot {
+    -fx-background-color: -fx-accent-color;
+}
+
+.slider .track {
+    -fx-background-color: -fx-theme-border;
+    -fx-background-radius: 4;
+}
+
+.slider .thumb {
+    -fx-background-color: -fx-accent-color;
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.section-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 14;
+    -fx-text-fill: -fx-theme-text;
+}
+
+.info-text {
+    -fx-text-fill: -fx-theme-text-muted;
+    -fx-font-size: 12;
+    -fx-font-style: italic;
+}
+
+.settings-section {
+    -fx-padding: 10 0;
+}
+
+.color-button {
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-background-radius: 20;
+    -fx-cursor: hand;
+    -fx-border-radius: 20;
+    -fx-padding: 0;
+}
+
+.color-button:hover {
+    -fx-opacity: 0.8;
+}
+
+.color-button:pressed {
+    -fx-opacity: 0.6;
 }

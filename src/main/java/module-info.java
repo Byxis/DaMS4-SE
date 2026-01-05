@@ -11,6 +11,7 @@ module fr.opal {
     opens fr.opal.facade to javafx.fxml;
     opens fr.opal.factory to javafx.fxml;
     opens fr.opal.service to javafx.fxml;
+    opens fr.opal.manager to javafx.fxml;
     opens fr.opal.type to javafx.fxml;
 
     exports fr.opal.UI;
@@ -20,5 +21,6 @@ module fr.opal {
     exports fr.opal.facade;
     exports fr.opal.factory;
     exports fr.opal.service;
+    exports fr.opal.manager;
     exports fr.opal.type;
 }

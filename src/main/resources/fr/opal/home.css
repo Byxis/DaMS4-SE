@@ -1,0 +1,13 @@
+/* ========================================
+   HOME PAGE - Specific styles
+   ======================================== */
+
+.home-content {
+    -fx-padding: 20;
+    -fx-spacing: 20;
+}
+
+.welcome-section {
+    -fx-alignment: center-left;
+    -fx-spacing: 10;
+}
