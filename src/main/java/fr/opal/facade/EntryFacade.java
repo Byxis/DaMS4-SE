@@ -3,25 +3,25 @@ package fr.opal.facade;
 import fr.opal.type.Entry;
 import fr.opal.type.User;
 import fr.opal.type.Comment;
-import fr.opal.dao.EntryDAO;
-import fr.opal.factory.AbstractEntryFactory;
+import fr.opal.type.EntryContextDTO;
+import fr.opal.service.EntryManager;
+import java.util.List;
 
 /**
  * Facade for entry operations
- * Provides simplified interface for loading, saving, and managing entries
+ * Thin wrapper that delegates to EntryManager
+ * Acts as the entry point from Controller to Service layer
  */
 public class EntryFacade {
 
     private static EntryFacade instance;
-    private AbstractEntryFactory factory;
-    private EntryDAO dao;
+    private EntryManager manager;
 
     /**
      * Private constructor for singleton pattern
      */
     private EntryFacade() {
-        this.factory = AbstractEntryFactory.getInstance();
-        this.dao = factory.getEntryDAO();
+        this.manager = new EntryManager();
     }
 
     /**
@@ -35,97 +35,107 @@ public class EntryFacade {
     }
 
     /**
-     * Loads an entry by its ID with all details
+     * Loads an entry by its ID with Depth-1 context (parent and children metadata)
+     * Returns an EntryContextDTO containing target entry, parent, and children
      */
-    public Entry loadEntry(int id) {
-        return dao.loadEntryWithDetails(id);
+    public EntryContextDTO loadEntry(int id) {
+        return manager.getEntry(id);
     }
 
     /**
      * Saves an entry to the database
      */
     public void saveEntry(Entry entry) {
-        if (entry.getId() == 0) {
-            int id = dao.createEntry(entry);
-            entry.setId(id);
-        } else {
-            dao.saveEntry(entry);
-        }
-        dao.updateEntryRelationships(entry);
+        manager.persistEntry(entry);
     }
 
     /**
      * Creates a new entry
      */
     public Entry createEntry(String title, String content, User author) {
-        Entry entry = factory.createEntry(title, content, author);
-        saveEntry(entry);
-        return entry;
+        return manager.createNewEntry(title, content, author);
     }
 
     /**
      * Deletes an entry
      */
     public void deleteEntry(int id) {
-        dao.deleteEntry(id);
+        manager.removeEntry(id);
     }
 
     /**
      * Gets the root entries (project roots)
      */
-    public java.util.List<Entry> getRootEntries() {
-        return dao.getRootEntries();
+    public List<Entry> getRootEntries() {
+        return manager.getAllRootEntries();
     }
 
     /**
      * Gets child entries of a parent
      */
-    public java.util.List<Entry> getChildEntries(int parentId) {
-        return dao.getChildEntries(parentId);
+    public List<Entry> getChildEntries(int parentId) {
+        return manager.getChildrenOfEntry(parentId);
     }
 
     /**
      * Adds a comment to an entry and persists it
      */
     public void addComment(Entry entry, Comment comment) {
-        entry.addComment(comment);
-        saveEntry(entry);
+        manager.persistCommentToEntry(entry, comment);
     }
 
     /**
      * Removes a comment from an entry
      */
     public void removeComment(Entry entry, Comment comment) {
-        entry.removeComment(comment);
-        saveEntry(entry);
+        manager.deleteCommentFromEntry(entry, comment);
     }
 
     /**
      * Updates entry parent relationship
      */
     public void updateParentEntry(Entry entry, Entry newParent) throws Entry.CircularDependencyException {
-        entry.setParentEntry(newParent);
-        saveEntry(entry);
-        if (newParent != null) {
-            saveEntry(newParent);
-        }
+        manager.updateEntryParent(entry, newParent);
     }
 
     /**
      * Adds a child entry
      */
     public void addChildEntry(Entry parent, Entry child) throws Entry.CircularDependencyException {
-        parent.addChildEntry(child);
-        saveEntry(parent);
-        saveEntry(child);
+        manager.attachChildToParent(parent, child);
     }
 
     /**
      * Removes a child entry
      */
     public void removeChildEntry(Entry parent, Entry child) {
-        parent.removeChildEntry(child);
-        saveEntry(parent);
-        saveEntry(child);
+        manager.detachChildFromParent(parent, child);
+    }
+
+    /**
+     * Creates a complete placeholder entry structure with all test variations
+     * @param ownerUsername The username of the entry owner (e.g., "lez")
+     * @return The root placeholder entry with full hierarchy
+     */
+    public Entry createPlaceholderEntryStructure(String ownerUsername) throws Exception {
+        return manager.initializePlaceholderStructure(ownerUsername);
+    }
+
+    /**
+     * Ensures the placeholder entry structure exists in the database
+     * @param ownerUsername The username of the entry owner (e.g., "lez")
+     * @return The root entry ID if created/loaded successfully, 0 if operation failed
+     */
+    public int ensurePlaceholderEntryExists(String ownerUsername) throws Exception {
+        return manager.ensurePlaceholderStructureExists(ownerUsername);
+    }
+
+    /**
+     * Loads the root placeholder entry from the database with Depth-1 context
+     * @return EntryContextDTO with root entry and its children, null if not found
+     */
+    public EntryContextDTO loadPlaceholderRootFromDatabase() {
+        return manager.fetchPlaceholderRootFromDatabase();
     }
 }
+

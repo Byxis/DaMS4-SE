@@ -1,0 +1,49 @@
+Entry management 
+
+Brief Description
+This use case describes how a user manages entries within a project.
+An Entry represents a node in the Project’s hierarchical tree and may contain text, comments, and relationships to parent and child entries.
+Flow of Events
+Basic Flow 
+The use case begins when the user chooses to interact with a project’s entry.
+Start
+The system displays the project’s entry tree.
+The user can select an existing entry or create a new one.
+Import: The user can import a project from JSON or supported text formats. The system parses the file and reconstructs the sub-entry tree. 
+the system displays the entry’s content and metadata.
+Navigating the entry tree.
+The user can see the entry’s parent and subtree.
+Permissions allowing, the user can travel up or down the entry tree.
+At each step, the system displays the entry’s content and metadata. 
+Edit the selected Entry’s content.
+The user can modify the entry’s title and content.
+The system saves the changes.
+Add Comments to the entry: 
+The user can add comments to the entry.
+The system records the new comment in the entry’s “commentaires” list. 
+Change entry relationships:
+The user can redefine parentEntry and childEntries relationships.
+The system updates the entry tree structure accordingly.
+Exporting the entry’s subtree:
+The user can request an export of entry structures to JSON, TXT, or XML.
+The system generates and provides the requested export.
+Alternative Flows
+Invalid Data or Save Error
+If the user provides incomplete or invalid data (e.g., missing title), the system displays an error message.
+Export Failure 
+If the export cannot be generated (e.g., corrupted entry relationships), the system notifies the user and logs the error.
+Invalid Relationship
+If a circular dependency is detected in the entry tree, the system prevents the change and alerts the user.
+Special Requirements
+The system must support exporting diagrams in standard formats (e.g., PNG, SVG, UML XMI).
+The system should maintain a modification history for each entry.
+Entry edits and comments must be timestamped and associated with the user.
+Pre-Conditions
+The user is authenticated and has access rights to the project and the entry.
+Post-Conditions
+The system’s entry tree, modification history, and associated data are updated.
+If unsuccessful, no changes are made to the project’s entries.
+Extension Points
+Comment Management: Can extend to allow threaded discussions or comment tagging.
+Version Control: Can extend to support rollback to previous entry states.
+Collaboration: Can extend to allow simultaneous editing by multiple users.

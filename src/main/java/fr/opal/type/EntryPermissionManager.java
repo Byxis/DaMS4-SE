@@ -26,10 +26,13 @@ public class EntryPermissionManager {
     }
 
     /**
-     * Removes a user permission
+     * Removes a user permission and marks it as explicitly denied (for sparse inheritance)
+     * This stores a null permission to indicate explicit denial at this node
      */
     public void removeUserPermission(User user) {
         userPermissions.removeIf(up -> up.getUser().getId() == user.getId());
+        // Add a null permission entry to mark explicit denial for sparse inheritance
+        userPermissions.add(new UserPermission(user, null));
     }
 
     /**
@@ -42,6 +45,14 @@ public class EntryPermissionManager {
             }
         }
         return null;
+    }
+
+    /**
+     * Checks if a user has an explicit permission defined at this node
+     * (used to determine if we should cascade to parent or not)
+     */
+    public boolean hasExplicitPermission(User user) {
+        return getUserPermission(user) != null;
     }
 
     /**

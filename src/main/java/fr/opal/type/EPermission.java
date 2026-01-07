@@ -4,6 +4,7 @@ package fr.opal.type;
  * Enum representing user permissions on entries
  */
 public enum EPermission {
+    NONE("NONE"),
     READER("READER"),
     COMMENTOR("COMMENTOR"),
     EDITOR("EDITOR");
@@ -28,7 +29,7 @@ public enum EPermission {
      * Checks if this permission includes VIEW capability
      */
     public boolean canView() {
-        return this != null;
+        return this != NONE && this != null;
     }
 
     /**

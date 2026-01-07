@@ -18,11 +18,83 @@ public class MySQLEntryDAO implements EntryDAO {
     public MySQLEntryDAO(Connection conn) {
         this.conn = conn;
         this.userDAO = new MySQLUserDAO(conn);
+        createTables();
+    }
+
+    /**
+     * Creates all necessary entry-related tables with idempotency
+     * Checks if tables exist before creating them
+     */
+    private void createTables() {
+        try {
+            createEntriesTable();
+            createCommentsTable();
+            createEntryPermissionsTable();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to create entry tables: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Creates the entries table if it doesn't exist
+     */
+    private void createEntriesTable() throws SQLException {
+        String sql = "CREATE TABLE IF NOT EXISTS entries (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY," +
+                "title VARCHAR(255) NOT NULL," +
+                "content LONGTEXT," +
+                "parent_id INT," +
+                "author_id INT NOT NULL," +
+                "creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                "last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+                "FOREIGN KEY (parent_id) REFERENCES entries(id) ON DELETE CASCADE," +
+                "FOREIGN KEY (author_id) REFERENCES users(id)" +
+                ")";
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        }
+    }
+
+    /**
+     * Creates the comments table if it doesn't exist
+     */
+    private void createCommentsTable() throws SQLException {
+        String sql = "CREATE TABLE IF NOT EXISTS comments (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY," +
+                "entry_id INT NOT NULL," +
+                "content TEXT NOT NULL," +
+                "author_id INT NOT NULL," +
+                "created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                "FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE," +
+                "FOREIGN KEY (author_id) REFERENCES users(id)" +
+                ")";
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        }
+    }
+
+    /**
+     * Creates the entry_permissions table if it doesn't exist
+     * Uses username instead of user_id for permission lookup to avoid ID conflicts
+     */
+    private void createEntryPermissionsTable() throws SQLException {
+        
+        String sql = "CREATE TABLE IF NOT EXISTS entry_permissions (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY," +
+                "entry_id INT NOT NULL," +
+                "username VARCHAR(255) NOT NULL," +
+                "permission VARCHAR(50)," +
+                "FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE," +
+                "UNIQUE KEY unique_entry_user (entry_id, username)" +
+                ")";
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        }
     }
 
     /**
      * Retrieves an entry by its ID with ALL data (eager load)
-     * Child entries are loaded with basic data only (lazy load - title, id, permissions)
+     * Implements Depth-1 Radial strategy: current entry (full), parent (metadata+permissions), children (metadata+permissions)
      */
     @Override
     public Entry getEntryById(int id) {
@@ -32,7 +104,19 @@ public class MySQLEntryDAO implements EntryDAO {
             entry.setComments(loadComments(id));
             entry.setPermissionManager(loadPermissions(id));
             
-            // Lazy load child entries (only title, id, and permissions)
+            // Load parent entry with permissions (Depth-1 Upward)
+            if (entry.getParentEntry() != null) {
+                Entry parent = entry.getParentEntry();
+                parent.setPermissionManager(loadPermissions(parent.getId()));
+                try {
+                    entry.setParentEntry(parent);
+                } catch (Entry.CircularDependencyException e) {
+                    // This shouldn't happen when loading from database
+                    e.printStackTrace();
+                }
+            }
+            
+            // Lazy load child entries with permissions (Depth-1 Downward)
             List<Entry> children = getChildEntries(id);
             for (Entry child : children) {
                 child.setPermissionManager(loadPermissions(child.getId()));
@@ -89,6 +173,10 @@ public class MySQLEntryDAO implements EntryDAO {
                 ps.setNull(3, Types.INTEGER);
             }
             
+            // Ensure author exists and has valid ID
+            if (entry.getAuthor() == null || entry.getAuthor().getId() == 0) {
+                throw new RuntimeException("Entry author is missing or has invalid ID");
+            }
             ps.setInt(4, entry.getAuthor().getId());
             ps.executeUpdate();
             
@@ -286,23 +374,24 @@ public class MySQLEntryDAO implements EntryDAO {
     }
 
     /**
-     * Load permissions for an entry
+     * Load permissions for an entry using username (not user_id)
      */
     private EntryPermissionManager loadPermissions(int entryId) {
         EntryPermissionManager manager = new EntryPermissionManager();
         List<UserPermission> permissions = new ArrayList<>();
         
-        String sql = "SELECT user_id, permission FROM entry_permissions WHERE entry_id = ?";
+        String sql = "SELECT username, permission FROM entry_permissions WHERE entry_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, entryId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                int userId = rs.getInt("user_id");
-                User user = userDAO.getUserById(String.valueOf(userId));
+                String username = rs.getString("username");
+                User user = userDAO.getUserById(username);
                 
                 if (user != null) {
                     String permStr = rs.getString("permission");
-                    EPermission permission = EPermission.valueOf(permStr);
+                    // Use NONE for explicitly denied permissions (sparse inheritance)
+                    EPermission permission = (permStr != null) ? EPermission.valueOf(permStr) : EPermission.NONE;
                     UserPermission userPerm = new UserPermission(user, permission);
                     permissions.add(userPerm);
                 }
@@ -331,13 +420,19 @@ public class MySQLEntryDAO implements EntryDAO {
             e.printStackTrace();
         }
         
-        // Insert new permissions
-        String insertSql = "INSERT INTO entry_permissions(entry_id, user_id, permission) VALUES (?, ?, ?)";
+        // Insert new permissions using username instead of user_id
+        String insertSql = "INSERT INTO entry_permissions(entry_id, username, permission) VALUES (?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
             for (UserPermission userPerm : entry.getPermissionManager().getUserPermissions()) {
                 ps.setInt(1, entry.getId());
-                ps.setInt(2, userPerm.getUser().getId());
-                ps.setString(3, userPerm.getPermission().name());
+                ps.setString(2, userPerm.getUser().getUsername());
+                // Store NONE as NULL in database for sparse inheritance
+                EPermission perm = userPerm.getPermission();
+                if (perm != null && perm != EPermission.NONE) {
+                    ps.setString(3, perm.name());
+                } else {
+                    ps.setNull(3, Types.VARCHAR);
+                }
                 ps.executeUpdate();
             }
         } catch (SQLException e) {

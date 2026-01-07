@@ -228,6 +228,126 @@ public class Entry {
         return descendants;
     }
 
+    /**
+     * Gets the effective permission for a user on this entry (with sparse inheritance).
+     * Walks up the tree to find the first explicit permission definition, then returns it.
+     * This respects the sparse inheritance model: only stored permissions that differ from parent.
+     * Important: If a permission is explicitly denied (removed) at this node, it stops cascading.
+     * @param user The user to check permissions for
+     * @return UserPermission if found anywhere in the tree, null if no permission found or explicitly denied
+     */
+    public UserPermission getUserPermissionWithCascade(User user) {
+        // Check if this node has an explicit permission (including explicit denial by removal in sparse mode)
+        boolean hasExplicit = this.permissionManager.hasExplicitPermission(user);
+        
+        if (hasExplicit) {
+            // This node has an explicit permission, use it (could be null if sparse removal happened)
+            return this.permissionManager.getUserPermission(user);
+        }
+        
+        // No explicit permission at this node, check parent (sparse inheritance)
+        if (this.parentEntry != null) {
+            return this.parentEntry.getUserPermissionWithCascade(user);
+        }
+        
+        // No permission found anywhere in the tree
+        return null;
+    }
+
+    /**
+     * Gets the effective permission level for a user considering sparse inheritance.
+     * This represents what the user actually has access to.
+     * @param user The user to check permissions for
+     * @return EPermission the effective permission level, or null if no permission
+     */
+    public EPermission getEffectivePermission(User user) {
+        UserPermission perm = getUserPermissionWithCascade(user);
+        return perm != null ? perm.getPermission() : null;
+    }
+
+    /**
+     * Gets the permission defined explicitly at this exact node (not inherited).
+     * Used to check if this entry has an override.
+     * @param user The user to check
+     * @return UserPermission if explicitly defined on this node, null otherwise
+     */
+    public UserPermission getDirectPermission(User user) {
+        return this.permissionManager.getUserPermission(user);
+    }
+
+    /**
+     * Adds a user permission using sparse inheritance.
+     * Only stores if the permission differs from what the user would inherit from parent.
+     * Avoids storing redundant permissions.
+     * @param user The user to add permission for
+     * @param permission The permission level to grant
+     * @throws CircularDependencyException if parent relationships are invalid
+     */
+    public void addUserPermissionSparse(User user, EPermission permission) throws CircularDependencyException {
+        // Get what the user would inherit from parent
+        EPermission inheritedPermission = null;
+        if (this.parentEntry != null) {
+            inheritedPermission = this.parentEntry.getEffectivePermission(user);
+        }
+        
+        // Only store if different from inherited (sparse storage)
+        if (inheritedPermission != permission) {
+            this.permissionManager.addUserPermission(new UserPermission(user, permission));
+        }
+    }
+
+    /**
+     * Removes a user permission from this specific node.
+     * The user will then inherit from parent (if available).
+     * @param user The user to remove permission for
+     */
+    public void removeUserPermissionSparse(User user) {
+        this.permissionManager.removeUserPermission(user);
+    }
+
+    /**
+     * Gets all users with permissions defined on this specific entry (not cascaded).
+     * Used for UI display and sparse inheritance checking.
+     * @return List of UserPermissions explicitly defined on this entry
+     */
+    public List<UserPermission> getUsersWithPermissions() {
+        return this.permissionManager.getUserPermissions();
+    }
+
+    /**
+     * Checks if a user has access to this entry using "deny by default" logic.
+     * 
+     * Access is ONLY granted if:
+     * 1. User has a resolved permission (cascaded from parent if needed)
+     * 2. AND that permission is not null (explicit denial)
+     * 3. AND the permission allows viewing (canView())
+     * 
+     * Access is DENIED if:
+     * 1. No permission found in tree (null UserPermission)
+     * 2. OR permission exists but is null (explicit denial marker)
+     * 3. OR permission doesn't allow viewing
+     * 
+     * @param user The user to check access for
+     * @return true if access is allowed, false otherwise
+     */
+    public boolean canUserAccess(User user) {
+        // Get the effective permission with cascading
+        UserPermission userPerm = getUserPermissionWithCascade(user);
+        
+        // Deny by default: if no permission record found anywhere in tree
+        if (userPerm == null) {
+            return false;
+        }
+        
+        // Deny if permission exists but is null (explicit denial marker)
+        if (userPerm.getPermission() == null) {
+            return false;
+        }
+        
+        // Allow only if permission explicitly allows viewing
+        return userPerm.getPermission().canView();
+    }
+
     // Exception class for circular dependencies
     public static class CircularDependencyException extends Exception {
         public CircularDependencyException(String message) {

@@ -12,6 +12,7 @@ import fr.opal.service.EntryJsonImporter;
 import fr.opal.service.EntryXmlImporter;
 import fr.opal.service.EntryJsonExporter;
 import fr.opal.service.EntryXmlExporter;
+import fr.opal.facade.EntryFacade;
 
 import java.io.File;
 import java.util.List;
@@ -51,9 +52,18 @@ public class EntryController {
     private Button deleteEntryBtn;
     @FXML
     private TextField entryTitleField;
+    @FXML
+    private ListView<UserPermission> usersPermissionsList;
+    @FXML
+    private TextField usernameField;
+    @FXML
+    private ComboBox<EPermission> permissionComboBox;
+    @FXML
+    private Button addPermissionBtn;
 
     private EntryManager entryManager;
     private AuthManager authManager;
+    private EntryFacade facade;
     private User currentUser;
 
     /**
@@ -63,70 +73,41 @@ public class EntryController {
     public void initialize() {
         // Initialize with current authenticated user
         authManager = AuthManager.getInstance();
+        facade = EntryFacade.getInstance();
         if (authManager.isAuthenticated()) {
             currentUser = authManager.getConnectedUser();
             entryManager = new EntryManager(currentUser);
             
-            // Initialize with placeholder entry if none exists
-            Entry placeholderEntry = entryManager.getCurrentEntry();
-            if (placeholderEntry == null) {
-                try {
-                    placeholderEntry = new Entry("Sample Project", "This is a sample project for testing the Entry Management System.", currentUser);
-                    placeholderEntry.getPermissionManager().addUserPermission(
-                        new UserPermission(currentUser, EPermission.EDITOR)
-                    );
-
-                    // Create nested child entries
-                    Entry chapter1 = new Entry("Chapter 1: Introduction", "Introduction to the project and its purpose.", currentUser);
-                    chapter1.getPermissionManager().addUserPermission(
-                        new UserPermission(currentUser, EPermission.EDITOR)
-                    );
-                    placeholderEntry.addChildEntry(chapter1);
-                    Entry section1_1 = new Entry("1.1 Overview", "This section provides an overview of the system architecture.", currentUser);
-                    section1_1.getPermissionManager().addUserPermission(
-                        new UserPermission(currentUser, EPermission.EDITOR)
-                    );
-                    chapter1.addChildEntry(section1_1);
+            try {
+                // Get the Facade to handle database initialization
+                // (facade field is already initialized above)
+                
+                // Ensure placeholder entry structure exists in database (idempotent)
+                // This creates it if it doesn't exist, but we DON'T use the returned ID for anything
+                facade.ensurePlaceholderEntryExists("lez");
+                
+                // Load the root entry from DATABASE with Depth-1 context
+                EntryContextDTO rootContext = facade.loadPlaceholderRootFromDatabase();
+                
+                if (rootContext != null) {
+                    Entry rootEntry = rootContext.getTargetEntry();
+                    // Set current entry to the database-loaded entry
+                    entryManager.setCurrentEntry(rootEntry);
+                    displayEntry(rootEntry);
                     
-                    Entry section1_2 = new Entry("1.2 Key Features", "Key features and capabilities of the system.", currentUser);
-                    section1_2.getPermissionManager().addUserPermission(
-                        new UserPermission(currentUser, EPermission.EDITOR)
-                    );
-                    chapter1.addChildEntry(section1_2);
-                    
-                    // Entry with NO permissions
-                    Entry chapter2 = new Entry("[NO ACCESS] Chapter 2: Implementation", "Implementation details and technical decisions.", currentUser);
-                    chapter2.getPermissionManager().removeUserPermission(currentUser);
-                    placeholderEntry.addChildEntry(chapter2);
-                    
-                    // Entry with READER only permissions
-                    Entry section2_1 = new Entry("[READER ONLY] Architecture", "System architecture and design patterns.", currentUser);
-                    section2_1.getPermissionManager().removeUserPermission(currentUser);
-                    section2_1.getPermissionManager().addUserPermission(
-                        new UserPermission(currentUser, EPermission.READER)
-                    );
-                    placeholderEntry.addChildEntry(section2_1);
-                    
-                    // Entry with COMMENTER only permissions
-                    Entry section2_2 = new Entry("[COMMENTER ONLY] Database Schema", "Database design and relationships.", currentUser);
-                    section2_2.getPermissionManager().removeUserPermission(currentUser);
-                    section2_2.getPermissionManager().addUserPermission(
-                        new UserPermission(currentUser, EPermission.COMMENTOR)
-                    );
-                    placeholderEntry.addChildEntry(section2_2);
-                    
-                    Entry chapter3 = new Entry("Chapter 3: Conclusion", "Final thoughts and future improvements.", currentUser);
-                    chapter3.getPermissionManager().addUserPermission(
-                        new UserPermission(currentUser, EPermission.EDITOR)
-                    );
-                    placeholderEntry.addChildEntry(chapter3);
-                    
-                    entryManager.setCurrentEntry(placeholderEntry);
-                    displayEntry(placeholderEntry);
-                } catch (Exception e) {
-                    showErrorDialog("Error", "Failed to initialize placeholder entry: " + e.getMessage());
+                    // Update navigation buttons based on context
+                    entryParentRedirBtn.setDisable(rootContext.isRoot());
+                    subDirBtn.setDisable(!rootContext.hasChildren());
+                } else {
+                    showErrorDialog("Error", "Failed to load placeholder entry from database");
                 }
+            } catch (Exception e) {
+                showErrorDialog("Error", "Failed to initialize entry system: " + e.getMessage());
             }
+            
+            // Initialize permission ComboBox
+            permissionComboBox.getItems().addAll(EPermission.READER, EPermission.COMMENTOR, EPermission.EDITOR);
+            permissionComboBox.setValue(EPermission.READER);
             
             // Add hover listener to sub directories button
             subDirBtn.setOnMouseEntered(e -> showSubDirectoriesOnHover());
@@ -146,7 +127,8 @@ public class EntryController {
         for (Entry child : current.getChildEntries()) {
             MenuItem menuItem = new MenuItem(child.getTitle());
             menuItem.setOnAction(e -> {
-                displayEntry(child);
+                // Reload child from database with full Depth-1 context
+                loadAndDisplayEntry(child.getId());
             });
             contextMenu.getItems().add(menuItem);
         }
@@ -163,13 +145,51 @@ public class EntryController {
     }
 
     /**
+     * Loads an entry by ID with Depth-1 context and displays it
+     * Provides validation context for navigation (parent and children)
+     */
+    private void loadAndDisplayEntry(int entryId) {
+        try {
+            EntryContextDTO context = facade.loadEntry(entryId);
+            if (context != null) {
+                Entry targetEntry = context.getTargetEntry();
+                
+                // Check if user has access to this entry
+                if (!targetEntry.canUserAccess(currentUser)) {
+                    showErrorDialog("Access Denied", "You do not have permission to view this entry.");
+                    return;
+                }
+                
+                // Display the entry with context loaded for navigation validation
+                displayEntry(targetEntry);
+                
+                // Parent is now available for navigation validation
+                Entry parent = context.getParentEntry();
+                if (parent == null) {
+                    entryParentRedirBtn.setDisable(true);
+                } else {
+                    entryParentRedirBtn.setDisable(false);
+                }
+                
+                // Children are now available
+                if (!context.hasChildren()) {
+                    subDirBtn.setDisable(true);
+                } else {
+                    subDirBtn.setDisable(false);
+                }
+            }
+        } catch (Exception e) {
+            showErrorDialog("Error loading entry", e.getMessage());
+        }
+    }
+
+    /**
      * Displays an entry's content
      */
     private void displayEntry(Entry entry) {
         try {
-            // Check if user has permission to view this entry
-            UserPermission userPerm = entry.getPermissionManager().getUserPermission(currentUser);
-            if (userPerm == null) {
+            // Check if user has access to this entry using "deny by default" logic
+            if (!entry.canUserAccess(currentUser)) {
                 showErrorDialog("Access Denied", "You do not have permission to view this entry.");
                 return;
             }
@@ -179,13 +199,14 @@ public class EntryController {
             entryContent.setText(entry.getContent());
             projectTitle.setText(entry.getRootEntry().getTitle());
             displayComments(entry);
+            displayUsersWithPermissions(entry);
             updateNavigationButtons();
             
-            // Apply permission-based UI restrictions
+            // Get effective permission for UI restrictions
+            UserPermission userPerm = entry.getUserPermissionWithCascade(currentUser);
             EPermission permission = userPerm.getPermission();
             boolean isEditor = permission.canEdit();
             boolean isCommenter = permission.canComment();
-            boolean isReader = permission == EPermission.READER;
             
             // Disable save button and lock content fields if not editor
             entryTitleField.setDisable(!isEditor);
@@ -225,6 +246,36 @@ public class EntryController {
     }
 
     /**
+     * Displays users with permissions on the current entry
+     */
+    private void displayUsersWithPermissions(Entry entry) {
+        if (usersPermissionsList == null) return;
+        
+        usersPermissionsList.getItems().clear();
+        usersPermissionsList.setCellFactory(param -> new ListCell<UserPermission>() {
+            @Override
+            protected void updateItem(UserPermission userPerm, boolean empty) {
+                super.updateItem(userPerm, empty);
+                if (empty || userPerm == null) {
+                    setText(null);
+                } else {
+                    // Only display if permission is not null (don't show explicit denials)
+                    if (userPerm.getPermission() == null) {
+                        setText(userPerm.getUser().getUsername() + " - NO ACCESS");
+                    } else {
+                        setText(userPerm.getUser().getUsername() + " - " + userPerm.getPermission().name());
+                    }
+                }
+            }
+        });
+        
+        List<UserPermission> permissions = entry.getUsersWithPermissions();
+        for (UserPermission perm : permissions) {
+            usersPermissionsList.getItems().add(perm);
+        }
+    }
+
+    /**
      * Updates navigation button states
      */
     private void updateNavigationButtons() {
@@ -244,11 +295,9 @@ public class EntryController {
                 current.setTitle(entryTitleField.getText());
                 current.setContent(entryContent.getText());
                 saveComments(current);
-                entryManager.saveEntry(current);
+                entryManager.persistEntry(current);
                 showInfoDialog("Success", "Entry saved successfully");
             }
-        } catch (EntryManager.PermissionException e) {
-            showErrorDialog("Permission Denied", e.getMessage());
         } catch (Exception e) {
             showErrorDialog("Error saving entry", e.getMessage());
         }
@@ -259,7 +308,7 @@ public class EntryController {
      */
     private void saveComments(Entry entry) {
         try {
-            entryManager.saveEntry(entry);
+            entryManager.persistEntry(entry);
         } catch (Exception e) {
             showErrorDialog("Error saving comments", e.getMessage());
         }
@@ -278,15 +327,13 @@ public class EntryController {
         Optional<String> result = dialog.showAndWait();
         if (result.isPresent()) {
             try {
-                Entry newEntry = entryManager.createEntry(result.get(), "");
                 Entry current = entryManager.getCurrentEntry();
                 if (current != null) {
-                    entryManager.addChild(current, newEntry);
+                    Entry newEntry = entryManager.createNewEntry(result.get(), "", current.getAuthor());
+                    entryManager.attachChildToParent(current, newEntry);
                     displayEntry(current);
+                    showInfoDialog("Success", "Entry created successfully");
                 }
-                showInfoDialog("Success", "Entry created successfully");
-            } catch (EntryManager.PermissionException e) {
-                showErrorDialog("Permission Denied", e.getMessage());
             } catch (Exception e) {
                 showErrorDialog("Error creating entry", e.getMessage());
             }
@@ -308,14 +355,12 @@ public class EntryController {
             Optional<ButtonType> result = confirmation.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK) {
                 try {
-                    entryManager.deleteEntry(current);
+                    entryManager.removeEntry(current.getId());
                     Entry parent = current.getParentEntry();
                     if (parent != null) {
                         displayEntry(parent);
                     }
                     showInfoDialog("Success", "Entry deleted successfully");
-                } catch (EntryManager.PermissionException e) {
-                    showErrorDialog("Permission Denied", e.getMessage());
                 } catch (Exception e) {
                     showErrorDialog("Error deleting entry", e.getMessage());
                 }
@@ -331,18 +376,49 @@ public class EntryController {
         Entry current = entryManager.getCurrentEntry();
         if (current != null && !commentInput.getText().isEmpty()) {
             try {
-                entryManager.addComment(current, commentInput.getText());
+                Comment comment = new Comment(commentInput.getText(), current.getAuthor());
+                entryManager.persistCommentToEntry(current, comment);
                 commentInput.clear();
                 displayComments(current);
                 showInfoDialog("Success", "Comment added successfully");
-                
-                // Try to save comments, suppress any errors
-                saveComments(current);
-            } catch (EntryManager.PermissionException e) {
-                showErrorDialog("Permission Denied", e.getMessage());
             } catch (Exception e) {
                 showErrorDialog("Error adding comment", e.getMessage());
             }
+        }
+    }
+
+    /**
+     * Handles adding a permission to an entry
+     */
+    @FXML
+    public void onAddPermission() {
+        Entry current = entryManager.getCurrentEntry();
+        String username = usernameField.getText();
+        EPermission permission = permissionComboBox.getValue();
+        
+        if (current == null) {
+            showErrorDialog("Error", "No entry selected");
+            return;
+        }
+        
+        if (username == null || username.trim().isEmpty()) {
+            showErrorDialog("Error", "Please enter a username");
+            return;
+        }
+        
+        if (permission == null) {
+            showErrorDialog("Error", "Please select a permission level");
+            return;
+        }
+        
+        try {
+            entryManager.setUserPermissionByUsername(current, username, permission);
+            usernameField.clear();
+            permissionComboBox.setValue(EPermission.READER);
+            displayUsersWithPermissions(current);
+            showInfoDialog("Success", "Permission added for user: " + username);
+        } catch (Exception e) {
+            showErrorDialog("Error adding permission", e.getMessage());
         }
     }
 
@@ -352,9 +428,14 @@ public class EntryController {
     @FXML
     public void onNavigateToParent() {
         try {
-            Entry parent = entryManager.navigateToParent();
-            if (parent != null) {
+            EntryContextDTO parentContext = entryManager.navigateToParent();
+            if (parentContext != null) {
+                Entry parent = parentContext.getTargetEntry();
                 displayEntry(parent);
+                
+                // Update navigation buttons based on new context
+                entryParentRedirBtn.setDisable(parentContext.isRoot());
+                subDirBtn.setDisable(!parentContext.hasChildren());
             }
         } catch (EntryManager.PermissionException e) {
             showErrorDialog("Permission Denied", e.getMessage());

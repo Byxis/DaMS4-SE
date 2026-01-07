@@ -163,4 +163,14 @@ public class AuthManager {
     public Session getSession(String sessionId) {
         return activeSessions.get(sessionId);
     }
+
+    /**
+     * Gets a user by username
+     * @param username The username to look up
+     * @return User if found, null otherwise
+     */
+    public User getUserByUsername(String username) {
+        AbstractUserFactory factory = AbstractUserFactory.getInstance();
+        return factory.createUserDAO().getUserById(username);
+    }
 }
