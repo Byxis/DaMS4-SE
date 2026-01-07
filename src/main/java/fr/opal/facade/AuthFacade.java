@@ -1,12 +1,9 @@
 package fr.opal.facade;
 
 import fr.opal.service.AuthManager;
-import fr.opal.type.Permission;
 import fr.opal.type.Profile;
 import fr.opal.type.Session;
 import fr.opal.type.User;
-
-import java.util.List;
 
 /**
  * Facade for authentication and authorization operations
@@ -56,34 +53,6 @@ public class AuthFacade {
      */
     public void updateProfile(int userId, Profile profile) {
         AuthManager.getInstance().updateProfile(userId, profile);
-    }
-
-    /**
-     * Retrieves list of permissions for a user
-     */
-    public List<Permission> listPermissions(int userId) {
-        return AuthManager.getInstance().listPermissions(userId);
-    }
-
-    /**
-     * Creates a new permission for a user
-     */
-    public Permission createPermission(int userId, String permissionName) {
-        return AuthManager.getInstance().createPermission(userId, permissionName);
-    }
-
-    /**
-     * Updates an existing permission
-     */
-    public void updatePermission(int permissionId, String permissionName) {
-        AuthManager.getInstance().updatePermission(permissionId, permissionName);
-    }
-
-    /**
-     * Deletes a permission
-     */
-    public void deletePermission(int permissionId) {
-        AuthManager.getInstance().deletePermission(permissionId);
     }
 
     /**

@@ -28,6 +28,8 @@ public class HomeController {
     private Button settingsBtn;
     @FXML
     private Label welcomeLabel;
+    @FXML
+    private Button entryBtn;
 
     private AuthFacade authFacade;
     private SessionPropertiesFacade sessionPropertiesFacade;
@@ -122,6 +124,18 @@ public class HomeController {
     @FXML
     private void openSettings() {
         sceneManager.openSettingsDialog(currentSession, sessionPropertiesFacade, () -> {});
+    }
+
+    /**
+     * Navigates to the entry management view
+     */
+    @FXML
+    private void goToEntryView() {
+        try {
+            sceneManager.switchTo("/fr/opal/entry.fxml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

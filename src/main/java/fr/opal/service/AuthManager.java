@@ -151,6 +151,13 @@ public class AuthManager {
     }
 
     /**
+     * Check if a user is currently authenticated
+     */
+    public boolean isAuthenticated() {
+        return connectedUser != null;
+    }
+
+    /**
      * Get session by ID
      */
     public Session getSession(String sessionId) {

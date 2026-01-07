@@ -1,8 +1,8 @@
 package fr.opal.dao;
 
 import fr.opal.exception.DataAccessException;
-import fr.opal.type.User;
 import fr.opal.type.Permission;
+import fr.opal.type.User;
 import fr.opal.type.Profile;
 
 import java.sql.*;

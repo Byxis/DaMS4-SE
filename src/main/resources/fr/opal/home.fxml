@@ -31,6 +31,8 @@
                   <Button fx:id="settingsBtn" mnemonicParsing="false" onAction="#openSettings" styleClass="navbar-button" text="⚙" />
                   <Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#logout" styleClass="navbar-button" text="🚪" />
                </children>
+                  <Button fx:id="entryBtn" mnemonicParsing="false" onAction="#goToEntryView" styleClass="navbar-button" text="📝" />
+               </children>
             </HBox>
          </children>
       </HBox>

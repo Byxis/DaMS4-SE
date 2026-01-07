@@ -338,3 +338,12 @@ ScrollPane {
 .color-button:pressed {
     -fx-opacity: 0.6;
 }
+
+/* Project Title - Entry Management */
+.projectTitle {
+    -fx-background-color: #2D2D2D;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+}
