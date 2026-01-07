@@ -96,42 +96,9 @@ public class HomeController {
      */
     @FXML
     private void openProfileDialog() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fr/opal/profile-dialog.fxml"));
-            DialogPane dialogPane = loader.load();
-
-            dialogPane.getStylesheets().add(getClass().getResource("/fr/opal/style.css").toExternalForm());
-            sessionPropertiesFacade.applyTheme(dialogPane);
-
-            TextField usernameField = (TextField) dialogPane.lookup("#usernameField");
-            TextField emailField = (TextField) dialogPane.lookup("#emailField");
-            TextField displayNameField = (TextField) dialogPane.lookup("#displayNameField");
-            TextField bioField = (TextField) dialogPane.lookup("#bioField");
-
-            usernameField.setText(currentSession.getUsername());
-            if (currentProfile != null) {
-                emailField.setText(currentProfile.getContactInfo());
-                displayNameField.setText(currentProfile.getDisplayName());
-                bioField.setText(currentProfile.getBio());
-            }
-
-            Dialog<ButtonType> dialog = new Dialog<>();
-            dialog.setDialogPane(dialogPane);
-            dialog.setTitle("Opal - Profile");
-
-            dialog.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.OK) {
-                    saveProfileChanges(
-                            displayNameField.getText(),
-                            bioField.getText(),
-                            emailField.getText()
-                    );
-                }
-            });
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        sceneManager.openProfileDialog(currentSession, currentProfile, sessionPropertiesFacade, (displayName, bio, email) -> {
+            saveProfileChanges(displayName, bio, email);
+        });
     }
 
     /**
@@ -184,58 +151,7 @@ public class HomeController {
      */
     @FXML
     private void openSettings() {
-        try {
-            if (currentSession != null) {
-                sessionPropertiesFacade.loadSettings(currentSession.getUserId());
-            }
-
-            SessionPropertiesController settingsController = new SessionPropertiesController();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fr/opal/session-properties-view.fxml"));
-            loader.setController(settingsController);
-            Parent settingsContent = loader.load();
-            
-            Dialog<Void> dialog = new Dialog<>();
-            dialog.setTitle("Appearance Settings");
-
-            dialog.getDialogPane().getStylesheets().add(getClass().getResource("/fr/opal/style.css").toExternalForm());
-            sessionPropertiesFacade.applyTheme(dialog.getDialogPane());
-            dialog.getDialogPane().setContent(settingsContent);
-            sessionPropertiesFacade.applyTheme(settingsContent);
-
-            dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-
-            Runnable updateCloseButtonColor = () -> {
-                String accentColor = sessionPropertiesFacade.getSettings().getAccentColor().getHexCode();
-                String textColor = ColorUtil.getContrastTextColor(accentColor);
-                javafx.application.Platform.runLater(() -> {
-                    dialog.getDialogPane().lookupAll(".button").forEach(node -> {
-                        if (node instanceof Button) {
-                            Button btn = (Button) node;
-                            if (!btn.getStyleClass().contains("color-button")) {
-                                btn.setStyle(
-                                    "-fx-background-color: " + accentColor + "; " +
-                                    "-fx-text-fill: " + textColor + "; " +
-                                    "-fx-font-weight: bold; " +
-                                    "-fx-padding: 8px 16px;"
-                                );
-                            }
-                        }
-                    });
-                });
-            };
-
-            settingsController.initialize();
-            updateCloseButtonColor.run();
-
-            settingsController.setOnSettingsChanged(() -> {
-                applyCurrentTheme();
-                updateCloseButtonColor.run();
-            });
-
-            dialog.showAndWait();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        sceneManager.openSettingsDialog(currentSession, sessionPropertiesFacade, this::applyCurrentTheme);
     }
 
     /**
