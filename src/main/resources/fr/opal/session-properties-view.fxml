@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox fx:id="rootContainer" spacing="20" stylesheets="@style.css, @settings.css" styleClass="dialog-content"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Theme Selection -->
+    <VBox spacing="10" styleClass="settings-section">
+        <Label text="Appearance" styleClass="section-title"/>
+        
+        <HBox spacing="20" alignment="CENTER_LEFT">
+            <fx:define>
+                <ToggleGroup fx:id="paletteToggleGroup"/>
+            </fx:define>
+            
+            <RadioButton fx:id="lightModeRadio" text="Light Mode" 
+                         toggleGroup="$paletteToggleGroup"
+                         styleClass="theme-radio"/>
+            <RadioButton fx:id="darkModeRadio" text="Dark Mode" 
+                         toggleGroup="$paletteToggleGroup"
+                         styleClass="theme-radio"/>
+        </HBox>
+    </VBox>
+
+    <VBox spacing="10" styleClass="settings-section">
+        <Label text="Accent Color" styleClass="section-title"/>
+        <HBox fx:id="colorButtonsContainer" spacing="10" alignment="CENTER_LEFT">
+            <!-- Color buttons will be added programmatically -->
+        </HBox>
+    </VBox>
+
+    <VBox spacing="10" styleClass="settings-section">
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Font Size" styleClass="section-title"/>
+            <Label fx:id="fontSizeLabel" text="14px" styleClass="font-size-value"/>
+        </HBox>
+        <Slider fx:id="fontSizeSlider" min="10" max="24" value="14" 
+                showTickLabels="true" showTickMarks="true" 
+                majorTickUnit="2" minorTickCount="1"
+                blockIncrement="1" snapToTicks="true"
+                styleClass="font-slider"/>
+    </VBox>
+
+    <Label text="Changes are applied instantly and saved automatically." 
+           styleClass="info-text" wrapText="true"/>
+</VBox>

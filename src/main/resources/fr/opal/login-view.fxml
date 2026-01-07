@@ -9,34 +9,30 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.AuthController">
+<AnchorPane fx:id="rootPane" prefHeight="400.0" prefWidth="600.0" stylesheets="@style.css, @auth.css" styleClass="main-container" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.AuthController">
    <children>
-      <VBox alignment="CENTER" layoutX="186.0" layoutY="58.0" prefHeight="283.0" prefWidth="228.0" style="-fx-spacing: 10;">
+      <VBox alignment="CENTER" layoutX="186.0" layoutY="58.0" prefHeight="283.0" prefWidth="228.0" spacing="10">
          <children>
-            <Label prefHeight="0.0" prefWidth="86.0" style="-fx-font-size: 32; -fx-font-weight: bold;" text="Login">
-               <font>
-                  <Font size="56.0" />
-               </font></Label>
-            <Hyperlink onAction="#goToRegister" prefHeight="24.0" prefWidth="150.0" style="-fx-text-fill: black; -fx-underline: true;" text="Create an account" textAlignment="CENTER">
+            <Label styleClass="title-large" text="Login"/>
+            <Hyperlink onAction="#goToRegister" prefHeight="24.0" prefWidth="150.0" text="Create an account" textAlignment="CENTER">
                <graphic>
                   <Label text="New ?" />
                </graphic>
             </Hyperlink>
-            <VBox prefHeight="0.0" prefWidth="228.0">
+            <VBox prefWidth="228.0" spacing="5">
                <children>
-                  <Label alignment="TOP_LEFT" prefHeight="18.0" prefWidth="136.0" text="Username *" />
+                  <Label alignment="TOP_LEFT" text="Username *" />
                   <TextField fx:id="usernameField" prefHeight="34.0" prefWidth="228.0" promptText="Username" />
                </children>
             </VBox>
-            <VBox prefHeight="0.0" prefWidth="228.0">
+            <VBox prefWidth="228.0" spacing="5">
                <children>
-                  <Label alignment="TOP_LEFT" prefHeight="18.0" prefWidth="136.0" text="Password *" />
+                  <Label alignment="TOP_LEFT" text="Password *" />
                   <PasswordField fx:id="passwordField" prefHeight="33.0" prefWidth="228.0" promptText="Password" />
-                  <Label />
                </children>
             </VBox>
             <Label fx:id="messageLabel" text="" wrapText="true" />
-            <Button mnemonicParsing="false" onAction="#submitLogin" prefHeight="131.0" prefWidth="228.0" style="-fx-border-radius: 6552;" text="Login" />
+            <Button mnemonicParsing="false" onAction="#submitLogin" prefHeight="40.0" prefWidth="228.0" styleClass="primary-button" text="Login" />
          </children>
       </VBox>
    </children>
