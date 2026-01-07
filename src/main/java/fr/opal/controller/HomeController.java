@@ -50,24 +50,16 @@ public class HomeController {
         if (currentSession != null) {
             usernameLabel.setText(currentSession.getUsername());
             currentProfile = authFacade.getProfile(currentSession.getUserId());
-            
-            // Load and apply user session settings
             sessionPropertiesFacade.loadSettings(currentSession.getUserId());
-            
-            // Apply theme after a short delay to ensure scene is ready
-            javafx.application.Platform.runLater(this::applyCurrentTheme);
+
             
             String welcomeText = "Welcome, " + currentSession.getUsername() + "!";
-            if (currentProfile != null && currentProfile.getDisplayName() != null && !currentProfile.getDisplayName().isEmpty()) {
-                String firstName = currentProfile.getDisplayName();
-                String lastName = currentProfile.getBio() != null ? currentProfile.getBio() : "";
-                if (!lastName.isEmpty()) {
-                    welcomeText = "Welcome, " + firstName + " " + lastName + "!";
-                } else {
-                    welcomeText = "Welcome, " + firstName + "!";
-                }
+            if (currentProfile != null && currentProfile.getDisplayName() != null) {
+                welcomeText = "Welcome, " + currentProfile.getDisplayName() + "!";
             }
             welcomeLabel.setText(welcomeText);
+
+            applyCurrentTheme();
         } else {
             redirectToLogin();
         }
@@ -79,8 +71,7 @@ public class HomeController {
     private void applyCurrentTheme() {
         if (rootPane != null) {
             sessionPropertiesFacade.applyTheme(rootPane);
-            
-            // Style navbar buttons with accent color and appropriate text color
+
             String accentColor = sessionPropertiesFacade.getSettings().getAccentColor().getHexCode();
             String textColor = ColorUtil.getContrastTextColor(accentColor);
             
@@ -109,20 +100,19 @@ public class HomeController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fr/opal/profile-dialog.fxml"));
             DialogPane dialogPane = loader.load();
 
-            // Add stylesheet and apply theme
             dialogPane.getStylesheets().add(getClass().getResource("/fr/opal/style.css").toExternalForm());
             sessionPropertiesFacade.applyTheme(dialogPane);
 
             TextField usernameField = (TextField) dialogPane.lookup("#usernameField");
             TextField emailField = (TextField) dialogPane.lookup("#emailField");
-            TextField firstNameField = (TextField) dialogPane.lookup("#firstNameField");
-            TextField lastNameField = (TextField) dialogPane.lookup("#lastNameField");
+            TextField displayNameField = (TextField) dialogPane.lookup("#displayNameField");
+            TextField bioField = (TextField) dialogPane.lookup("#bioField");
 
             usernameField.setText(currentSession.getUsername());
             if (currentProfile != null) {
                 emailField.setText(currentProfile.getContactInfo());
-                firstNameField.setText(currentProfile.getDisplayName());
-                lastNameField.setText(currentProfile.getBio());
+                displayNameField.setText(currentProfile.getDisplayName());
+                bioField.setText(currentProfile.getBio());
             }
 
             Dialog<ButtonType> dialog = new Dialog<>();
@@ -132,8 +122,8 @@ public class HomeController {
             dialog.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
                     saveProfileChanges(
-                            firstNameField.getText(),
-                            lastNameField.getText(),
+                            displayNameField.getText(),
+                            bioField.getText(),
                             emailField.getText()
                     );
                 }
@@ -195,45 +185,32 @@ public class HomeController {
     @FXML
     private void openSettings() {
         try {
-            // FORCE reload settings from database before opening dialog
             if (currentSession != null) {
                 sessionPropertiesFacade.loadSettings(currentSession.getUserId());
             }
-            
-            // Create controller BEFORE loading FXML
+
             SessionPropertiesController settingsController = new SessionPropertiesController();
-            
-            // Create FXMLLoader and set controller manually
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fr/opal/session-properties-view.fxml"));
             loader.setController(settingsController);
             Parent settingsContent = loader.load();
             
             Dialog<Void> dialog = new Dialog<>();
             dialog.setTitle("Appearance Settings");
-            
-            // Add stylesheet first
+
             dialog.getDialogPane().getStylesheets().add(getClass().getResource("/fr/opal/style.css").toExternalForm());
-            
-            // Apply theme to dialog first
             sessionPropertiesFacade.applyTheme(dialog.getDialogPane());
-            
-            // Set content after theme is applied
             dialog.getDialogPane().setContent(settingsContent);
             sessionPropertiesFacade.applyTheme(settingsContent);
-            
-            // Add button
+
             dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-            
-            // Function to update close button color
+
             Runnable updateCloseButtonColor = () -> {
                 String accentColor = sessionPropertiesFacade.getSettings().getAccentColor().getHexCode();
                 String textColor = ColorUtil.getContrastTextColor(accentColor);
                 javafx.application.Platform.runLater(() -> {
-                    // Find all buttons in the DialogPane (using CSS selector)
                     dialog.getDialogPane().lookupAll(".button").forEach(node -> {
-                        if (node instanceof javafx.scene.control.Button) {
-                            javafx.scene.control.Button btn = (javafx.scene.control.Button) node;
-                            // Check if this is not a color button (only style dialog buttons)
+                        if (node instanceof Button) {
+                            Button btn = (Button) node;
                             if (!btn.getStyleClass().contains("color-button")) {
                                 btn.setStyle(
                                     "-fx-background-color: " + accentColor + "; " +
@@ -246,14 +223,10 @@ public class HomeController {
                     });
                 });
             };
-            
-            // Initialize the controller AFTER loading the FXML
+
             settingsController.initialize();
-            
-            // Update close button color initially
             updateCloseButtonColor.run();
-            
-            // Update close button color when settings change
+
             settingsController.setOnSettingsChanged(() -> {
                 applyCurrentTheme();
                 updateCloseButtonColor.run();
@@ -272,6 +245,30 @@ public class HomeController {
         try {
             AuthController.clearMessageLabel();
             sceneManager.switchTo("/fr/opal/login-view.fxml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Opens the friends list view
+     */
+    @FXML
+    private void openFriendsList() {
+        try {
+            sceneManager.openNewWindow("/fr/opal/friend-list-view.fxml", "Friends - Opal", 800, 600);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Opens the friend search view
+     */
+    @FXML
+    private void openFriendSearch() {
+        try {
+            sceneManager.openNewWindow("/fr/opal/friend-search-view.fxml", "Find Friends - Opal", 800, 600);
         } catch (IOException e) {
             e.printStackTrace();
         }

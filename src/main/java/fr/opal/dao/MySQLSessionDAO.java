@@ -37,7 +37,7 @@ public class MySQLSessionDAO extends SessionDAO {
                     palette = StylePalette.valueOf(paletteStr);
                 } catch (Exception ignored) {}
 
-                StyleColor color = StyleColor.BLACK;
+                StyleColor color = StyleColor.BLUE;
                 try {
                     color = StyleColor.valueOf(colorStr);
                 } catch (Exception ignored) {}
@@ -141,7 +141,7 @@ public class MySQLSessionDAO extends SessionDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return StyleColor.BLACK;
+        return StyleColor.BLUE;
     }
 
     @Override
@@ -173,7 +173,7 @@ public class MySQLSessionDAO extends SessionDAO {
                     insertPs.setInt(1, userId);
                     insertPs.setInt(2, 14);
                     insertPs.setString(3, StylePalette.LIGHT.name());
-                    insertPs.setString(4, StyleColor.BLACK.name());
+                    insertPs.setString(4, StyleColor.BLUE.name());
                     insertPs.executeUpdate();
                 }
             }

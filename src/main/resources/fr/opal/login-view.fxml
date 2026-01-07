@@ -9,7 +9,8 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:id="rootPane" prefHeight="400.0" prefWidth="600.0" stylesheets="@style.css, @auth.css" styleClass="main-container" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.AuthController">
+<?import javafx.scene.layout.StackPane?>
+<StackPane fx:id="rootPane" prefHeight="400.0" prefWidth="600.0" stylesheets="@style.css, @auth.css" styleClass="main-container" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.AuthController">
    <children>
       <VBox alignment="CENTER" layoutX="186.0" layoutY="58.0" prefHeight="283.0" prefWidth="228.0" spacing="10">
          <children>
@@ -36,4 +37,4 @@
          </children>
       </VBox>
    </children>
-</AnchorPane>
+</StackPane>

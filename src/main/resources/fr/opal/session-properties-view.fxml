@@ -9,8 +9,6 @@
     <padding>
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
-
-    <!-- Theme Selection -->
     <VBox spacing="10" styleClass="settings-section">
         <Label text="Appearance" styleClass="section-title"/>
         
@@ -37,7 +35,7 @@
 
     <VBox spacing="10" styleClass="settings-section">
         <HBox spacing="10" alignment="CENTER_LEFT">
-            <Label text="Font Size" styleClass="section-title"/>
+            <Label text="Entry Font Size" styleClass="section-title"/>
             <Label fx:id="fontSizeLabel" text="14px" styleClass="font-size-value"/>
         </HBox>
         <Slider fx:id="fontSizeSlider" min="10" max="24" value="14" 
