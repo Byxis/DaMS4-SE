@@ -41,6 +41,30 @@ public class MySQLUserDAO extends UserDAO {
     }
 
     /**
+     * Get user by database ID (integer primary key)
+     */
+    @Override
+    public User getUserByDatabaseId(int id)
+    {
+        String sql = "SELECT id, username, password FROM users WHERE id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql))
+        {
+            ps.setInt(1, id);
+            var rs = ps.executeQuery();
+            if (rs.next())
+            {
+                User user = new User(rs.getInt("id"), rs.getString("username"), rs.getString("password"));
+                return user;
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
      * Create a new user
      */
     @Override

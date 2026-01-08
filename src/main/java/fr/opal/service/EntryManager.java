@@ -232,17 +232,36 @@ public class EntryManager {
     // Comment Management
 
     /**
-     * Adds a comment to an entry and persists it
+     * Adds a comment to an entry with permission checks
+     * Permission: COMMENTOR or EDITOR
+     * Only the comment is persisted (Auto-Save)
      */
-    public void persistCommentToEntry(Entry entry, Comment comment) {
+    public void addComment(int entryId, Comment comment) throws PermissionException {
+        // SECURITY: Verify user has permission to comment
+        Entry entry = dao.loadEntryWithDetails(entryId);
+        if (entry == null) {
+            throw new PermissionException("Entry not found");
+        }
+        
+        if (!hasPermission(entry, EPermission.COMMENTOR)) {
+            throw new PermissionException("You do not have permission to comment on this entry");
+        }
+        
+        // Add comment and persist only the comment
         entry.addComment(comment);
-        persistEntry(entry);
+        dao.saveEntry(entry);
     }
 
     /**
-     * Removes a comment from entry and persists
+     * Removes a comment from entry with permission checks
+     * Permission: EDITOR (or comment author)
      */
-    public void deleteCommentFromEntry(Entry entry, Comment comment) {
+    public void deleteCommentFromEntry(Entry entry, Comment comment) throws PermissionException {
+        // SECURITY: Only EDITOR can remove comments
+        if (!hasPermission(entry, EPermission.EDITOR)) {
+            throw new PermissionException("You do not have permission to delete comments");
+        }
+        
         entry.removeComment(comment);
         persistEntry(entry);
     }
@@ -252,6 +271,47 @@ public class EntryManager {
      */
     public List<Comment> getComments(Entry entry) {
         return entry.getComments();
+    }
+
+    // Entry Data & Permission Updates
+
+    /**
+     * Updates entry data and permissions (Manual Save)
+     * Scope: Title, Content, and Permissions
+     * Permission: EDITOR only
+     * SECURITY: READER and COMMENTOR users are strictly blocked
+     */
+    public void updateEntry(int entryId, String newTitle, String newContent, List<UserPermission> permissionOverrides) throws PermissionException {
+        // SECURITY: Only EDITOR can modify entry data and permissions
+        Entry entry = dao.loadEntryWithDetails(entryId);
+        if (entry == null) {
+            throw new PermissionException("Entry not found");
+        }
+        
+        // STRICT CHECK: READER users are absolutely blocked
+        UserPermission userPerm = entry.getPermissionManager().getUserPermission(currentUser);
+        if (userPerm != null && userPerm.getPermission() == EPermission.READER) {
+            throw new PermissionException("Read-only users cannot modify entries");
+        }
+        
+        // STRICT CHECK: Only EDITOR can proceed
+        if (!hasPermission(entry, EPermission.EDITOR)) {
+            throw new PermissionException("You do not have editor permissions for this entry");
+        }
+        
+        // Update entry data
+        entry.setTitle(newTitle);
+        entry.setContent(newContent);
+        
+        // Update permissions if provided
+        if (permissionOverrides != null && !permissionOverrides.isEmpty()) {
+            for (UserPermission perm : permissionOverrides) {
+                entry.getPermissionManager().addUserPermission(perm);
+            }
+        }
+        
+        // Persist the complete entry with all changes
+        persistEntry(entry);
     }
 
     // Permission Management

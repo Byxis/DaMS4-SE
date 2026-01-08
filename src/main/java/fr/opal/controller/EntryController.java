@@ -1,8 +1,11 @@
 package fr.opal.controller;
 
 import fr.opal.type.*;
+import fr.opal.service.SceneManager;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import fr.opal.service.EntryManager;
 import fr.opal.service.AuthManager;
@@ -12,9 +15,11 @@ import fr.opal.service.EntryJsonImporter;
 import fr.opal.service.EntryXmlImporter;
 import fr.opal.service.EntryJsonExporter;
 import fr.opal.service.EntryXmlExporter;
+import fr.opal.facade.AuthFacade;
 import fr.opal.facade.EntryFacade;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +27,16 @@ import java.util.Optional;
  * Controller for entry management UI
  */
 public class EntryController {
+    // Navbar fields
+    @FXML
+    private Button userProfileBtn;
+    @FXML
+    private Label usernameLabel;
+    @FXML
+    private Button homeBtn;
+    @FXML
+    private Button logoutBtn;
+
     @FXML
     private TextArea entryContent;
     @FXML
@@ -63,17 +78,27 @@ public class EntryController {
 
     private EntryManager entryManager;
     private AuthManager authManager;
+    private AuthFacade authFacade;
+    private SceneManager sceneManager;
     private EntryFacade facade;
     private User currentUser;
+    private Session currentSession;
+    private Profile currentProfile;
 
     /**
      * Initialize controller
      */
     @FXML
     public void initialize() {
-        // Initialize with current authenticated user
+        // Initialize services
         authManager = AuthManager.getInstance();
+        authFacade = AuthFacade.getInstance();
+        sceneManager = SceneManager.getInstance();
         facade = EntryFacade.getInstance();
+        
+        // Initialize navbar with current session
+        initializeNavbar();
+        
         if (authManager.isAuthenticated()) {
             currentUser = authManager.getConnectedUser();
             entryManager = new EntryManager(currentUser);
@@ -115,25 +140,129 @@ public class EntryController {
     }
 
     /**
+     * Initializes the navbar with user information
+     */
+    private void initializeNavbar() {
+        currentSession = authFacade.getCurrentSession();
+        if (currentSession != null) {
+            usernameLabel.setText(currentSession.getUsername());
+            currentProfile = authFacade.getProfile(currentSession.getUserId());
+        }
+    }
+
+    /**
+     * Opens profile dialog (similar to HomeController)
+     */
+    @FXML
+    private void openProfileDialog() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fr/opal/profile-dialog.fxml"));
+            DialogPane dialogPane = loader.load();
+
+            TextField profileUsernameField = (TextField) dialogPane.lookup("#usernameField");
+            TextField emailField = (TextField) dialogPane.lookup("#emailField");
+            TextField firstNameField = (TextField) dialogPane.lookup("#firstNameField");
+            TextField lastNameField = (TextField) dialogPane.lookup("#lastNameField");
+
+            profileUsernameField.setText(currentSession.getUsername());
+            if (currentProfile != null) {
+                emailField.setText(currentProfile.getContactInfo());
+                firstNameField.setText(currentProfile.getDisplayName());
+                lastNameField.setText(currentProfile.getBio());
+            }
+
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+            dialog.setTitle("Opal - Profile");
+
+            dialog.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    saveProfileChanges(
+                            firstNameField.getText(),
+                            lastNameField.getText(),
+                            emailField.getText()
+                    );
+                }
+            });
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Saves profile changes
+     */
+    private void saveProfileChanges(String firstName, String lastName, String email) {
+        try {
+            if (currentSession != null) {
+                Profile profile = new Profile(currentSession.getUserId(), firstName, lastName, email);
+                authFacade.updateProfile(currentSession.getUserId(), profile);
+                currentProfile = profile;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Handles logout
+     */
+    @FXML
+    private void logout() {
+        if (currentSession != null) {
+            authFacade.logout(currentSession.getId());
+        }
+        try {
+            AuthController.clearMessageLabel();
+            sceneManager.switchTo("/fr/opal/login-view.fxml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Navigates back to home
+     */
+    @FXML
+    private void onNavigateHome() {
+        try {
+            sceneManager.switchTo("/fr/opal/home.fxml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * Handles showing subdirectories in a popup menu on hover
      */
     public void showSubDirectoriesOnHover() {
         Entry current = entryManager.getCurrentEntry();
-        if (current == null || current.getChildEntries().isEmpty()) {
+        if (current == null) {
             return;
         }
         
-        ContextMenu contextMenu = new ContextMenu();
-        for (Entry child : current.getChildEntries()) {
-            MenuItem menuItem = new MenuItem(child.getTitle());
-            menuItem.setOnAction(e -> {
-                // Reload child from database with full Depth-1 context
-                loadAndDisplayEntry(child.getId());
-            });
-            contextMenu.getItems().add(menuItem);
+        // Reload current entry with context to get fresh children data
+        try {
+            EntryContextDTO context = facade.loadEntry(current.getId());
+            if (context == null || !context.hasChildren()) {
+                return;
+            }
+            
+            ContextMenu contextMenu = new ContextMenu();
+            for (Entry child : context.getChildEntries()) {
+                MenuItem menuItem = new MenuItem(child.getTitle());
+                menuItem.setOnAction(e -> {
+                    // Reload child from database with full Depth-1 context
+                    loadAndDisplayEntry(child.getId());
+                });
+                contextMenu.getItems().add(menuItem);
+            }
+            
+            contextMenu.show(subDirBtn, javafx.geometry.Side.BOTTOM, 0, 0);
+        } catch (Exception e) {
+            showErrorDialog("Error loading children", e.getMessage());
         }
-        
-        contextMenu.show(subDirBtn, javafx.geometry.Side.BOTTOM, 0, 0);
     }
 
     /**
@@ -161,22 +290,7 @@ public class EntryController {
                 }
                 
                 // Display the entry with context loaded for navigation validation
-                displayEntry(targetEntry);
-                
-                // Parent is now available for navigation validation
-                Entry parent = context.getParentEntry();
-                if (parent == null) {
-                    entryParentRedirBtn.setDisable(true);
-                } else {
-                    entryParentRedirBtn.setDisable(false);
-                }
-                
-                // Children are now available
-                if (!context.hasChildren()) {
-                    subDirBtn.setDisable(true);
-                } else {
-                    subDirBtn.setDisable(false);
-                }
+                displayEntry(targetEntry, context);
             }
         } catch (Exception e) {
             showErrorDialog("Error loading entry", e.getMessage());
@@ -187,6 +301,13 @@ public class EntryController {
      * Displays an entry's content
      */
     private void displayEntry(Entry entry) {
+        displayEntry(entry, null);
+    }
+
+    /**
+     * Displays an entry's content with optional navigation context
+     */
+    private void displayEntry(Entry entry, EntryContextDTO context) {
         try {
             // Check if user has access to this entry using "deny by default" logic
             if (!entry.canUserAccess(currentUser)) {
@@ -200,7 +321,15 @@ public class EntryController {
             projectTitle.setText(entry.getRootEntry().getTitle());
             displayComments(entry);
             displayUsersWithPermissions(entry);
-            updateNavigationButtons();
+            
+            // Update navigation buttons based on context if provided, otherwise use in-memory state
+            if (context != null) {
+                entryParentRedirBtn.setDisable(context.getParentEntry() == null);
+                subDirBtn.setDisable(!context.hasChildren());
+                projectRootRedirBtn.setDisable(true); // Root navigation not yet implemented
+            } else {
+                updateNavigationButtons();
+            }
             
             // Get effective permission for UI restrictions
             UserPermission userPerm = entry.getUserPermissionWithCascade(currentUser);
@@ -280,37 +409,38 @@ public class EntryController {
      */
     private void updateNavigationButtons() {
         Entry current = entryManager.getCurrentEntry();
-        projectRootRedirBtn.setDisable(current == null || current.getRootEntry() == current);
+        projectRootRedirBtn.setDisable(true); // Root navigation not yet implemented
         entryParentRedirBtn.setDisable(current == null || current.getParentEntry() == null);
     }
 
     /**
-     * Handles saving the current entry
+     * Handles saving the current entry data and permissions (Manual Save)
+     * EDITOR only - COMMENTOR and READER users are blocked
      */
     @FXML
     public void onSaveEntry() {
+        Entry current = entryManager.getCurrentEntry();
+        if (current == null) {
+            showErrorDialog("Error", "No entry selected");
+            return;
+        }
+        
         try {
-            Entry current = entryManager.getCurrentEntry();
-            if (current != null) {
-                current.setTitle(entryTitleField.getText());
-                current.setContent(entryContent.getText());
-                saveComments(current);
-                entryManager.persistEntry(current);
-                showInfoDialog("Success", "Entry saved successfully");
-            }
+            String newTitle = entryTitleField.getText();
+            String newContent = entryContent.getText();
+            
+            // Call the new updateEntry method with permission checks
+            // This will throw PermissionException if user is not EDITOR
+            entryManager.updateEntry(current.getId(), newTitle, newContent, null);
+            
+            showInfoDialog("Success", "Entry saved successfully");
+            
+            // Reload the entry to refresh UI with fresh data from database
+            loadAndDisplayEntry(current.getId());
+        } catch (EntryManager.PermissionException e) {
+            showErrorDialog("Permission Denied", e.getMessage());
         } catch (Exception e) {
             showErrorDialog("Error saving entry", e.getMessage());
-        }
-    }
-
-    /**
-     * Saves only the comments of an entry
-     */
-    private void saveComments(Entry entry) {
-        try {
-            entryManager.persistEntry(entry);
-        } catch (Exception e) {
-            showErrorDialog("Error saving comments", e.getMessage());
         }
     }
 
@@ -369,21 +499,39 @@ public class EntryController {
     }
 
     /**
-     * Handles adding a comment
+     * Handles adding a comment (Auto-Save)
+     * COMMENTOR or EDITOR - READER users are blocked
      */
     @FXML
     public void onAddComment() {
         Entry current = entryManager.getCurrentEntry();
-        if (current != null && !commentInput.getText().isEmpty()) {
-            try {
-                Comment comment = new Comment(commentInput.getText(), current.getAuthor());
-                entryManager.persistCommentToEntry(current, comment);
-                commentInput.clear();
-                displayComments(current);
-                showInfoDialog("Success", "Comment added successfully");
-            } catch (Exception e) {
-                showErrorDialog("Error adding comment", e.getMessage());
-            }
+        if (current == null) {
+            showErrorDialog("Error", "No entry selected");
+            return;
+        }
+        
+        String commentText = commentInput.getText().trim();
+        if (commentText.isEmpty()) {
+            showErrorDialog("Error", "Comment cannot be empty");
+            return;
+        }
+        
+        try {
+            // Create comment with current user as author
+            Comment comment = new Comment(commentText, currentUser);
+            
+            // Call the new addComment method with permission checks (Auto-Save)
+            // This will throw PermissionException if user is not COMMENTOR or EDITOR
+            entryManager.addComment(current.getId(), comment);
+            
+            // Clear input and refresh display
+            commentInput.clear();
+            displayComments(current);
+            showInfoDialog("Success", "Comment added successfully");
+        } catch (EntryManager.PermissionException e) {
+            showErrorDialog("Permission Denied", e.getMessage());
+        } catch (Exception e) {
+            showErrorDialog("Error adding comment", e.getMessage());
         }
     }
 
@@ -446,18 +594,11 @@ public class EntryController {
 
     /**
      * Handles navigation to root entry
+     * TODO: Implement when root entry navigation feature is added
      */
     @FXML
     public void onNavigateToRoot() {
-        try {
-            Entry current = entryManager.getCurrentEntry();
-            if (current != null) {
-                Entry root = current.getRootEntry();
-                displayEntry(root);
-            }
-        } catch (Exception e) {
-            showErrorDialog("Error navigating", e.getMessage());
-        }
+        // Root navigation not yet implemented
     }
 
     /**

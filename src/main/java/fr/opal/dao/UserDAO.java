@@ -17,6 +17,11 @@ public abstract class UserDAO {
     public abstract User getUserById(String username);
 
     /**
+     * Get user by database ID (integer primary key)
+     */
+    abstract public User getUserByDatabaseId(int id);
+
+    /**
      * Create a new user
      */
     public abstract User createUser(String username, String password);

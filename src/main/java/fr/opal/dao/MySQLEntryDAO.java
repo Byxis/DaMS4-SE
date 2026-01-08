@@ -281,9 +281,9 @@ public class MySQLEntryDAO implements EntryDAO {
         entry.setTitle(rs.getString("title"));
         entry.setContent(rs.getString("content"));
         
-        // Load author
+        // Load author using database ID (not username)
         int authorId = rs.getInt("author_id");
-        User author = userDAO.getUserById(String.valueOf(authorId));
+        User author = userDAO.getUserByDatabaseId(authorId);
         entry.setAuthor(author);
         
         // Load metadata
@@ -332,7 +332,15 @@ public class MySQLEntryDAO implements EntryDAO {
                 int id = rs.getInt("id");
                 String content = rs.getString("content");
                 int authorId = rs.getInt("author_id");
-                User author = userDAO.getUserById(String.valueOf(authorId));
+                // Use getUserByDatabaseId (integer ID) not getUserById (username)
+                User author = userDAO.getUserByDatabaseId(authorId);
+                
+                // Skip comments with invalid/missing authors (data integrity issue)
+                if (author == null) {
+                    System.err.println("Warning: Comment ID " + id + " has invalid author_id: " + authorId);
+                    continue;
+                }
+                
                 java.util.Date createdDate = new java.util.Date(rs.getTimestamp("created_date").getTime());
                 
                 Comment comment = new Comment(id, content, author, createdDate);
