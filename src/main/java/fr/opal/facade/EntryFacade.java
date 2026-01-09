@@ -79,16 +79,32 @@ public class EntryFacade {
 
     /**
      * Adds a comment to an entry and persists it
+     * Refreshes the entry's comments from database after persistence
      */
-    public void addComment(Entry entry, Comment comment) {
-        manager.persistCommentToEntry(entry, comment);
+    public void addComment(Entry entry, Comment comment) throws EntryManager.PermissionException {
+        manager.addComment(entry.getId(), comment);
+        
+        // Reload the entry with fresh comments from database
+        EntryContextDTO refreshedContext = loadEntry(entry.getId());
+        if (refreshedContext != null) {
+            entry.getComments().clear();
+            entry.getComments().addAll(refreshedContext.getTargetEntry().getComments());
+        }
     }
 
     /**
      * Removes a comment from an entry
+     * Refreshes the entry's comments from database after deletion
      */
-    public void removeComment(Entry entry, Comment comment) {
+    public void removeComment(Entry entry, Comment comment) throws EntryManager.PermissionException {
         manager.deleteCommentFromEntry(entry, comment);
+        
+        // Reload the entry with fresh comments from database
+        EntryContextDTO refreshedContext = loadEntry(entry.getId());
+        if (refreshedContext != null) {
+            entry.getComments().clear();
+            entry.getComments().addAll(refreshedContext.getTargetEntry().getComments());
+        }
     }
 
     /**
