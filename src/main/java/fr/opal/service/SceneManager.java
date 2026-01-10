@@ -146,6 +146,11 @@ public class SceneManager {
             Dialog<ButtonType> dialog = new Dialog<>();
             dialog.setDialogPane(dialogPane);
             dialog.setTitle("Opal - Profile");
+            dialog.initOwner(primaryStage);
+            dialog.setOnShowing(event -> {
+                Stage stage = (Stage) dialog.getDialogPane().getScene().getWindow();
+                stage.getIcons().add(new Image(getClass().getResourceAsStream("/fr/opal/opal-icon.png")));
+            });
 
             dialog.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK && onProfileSaved != null) {
@@ -184,6 +189,11 @@ public class SceneManager {
 
             Dialog<Void> dialog = new Dialog<>();
             dialog.setTitle("Appearance Settings");
+            dialog.initOwner(primaryStage);
+            dialog.setOnShowing(event -> {
+                Stage stage = (Stage) dialog.getDialogPane().getScene().getWindow();
+                stage.getIcons().add(new Image(getClass().getResourceAsStream("/fr/opal/opal-icon.png")));
+            });
 
             dialog.getDialogPane().getStylesheets().add(getClass().getResource("/fr/opal/style.css").toExternalForm());
             dialog.getDialogPane().getStylesheets().add(getClass().getResource("/fr/opal/settings.css").toExternalForm());
