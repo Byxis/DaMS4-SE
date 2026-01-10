@@ -26,11 +26,17 @@ Based on the design, the application primarily handles:
 - **Register**: New users can create an account.
 - **Logout**: Secure termination of the user session.
 - **Profile Management**: Users can view and update their profiles and permissions.
+- *Designed by* : <a href="https://github.com/matheorevel17"><img src="https://github.com/matheorevel17.png" width="20" style="border-radius:50%; vertical-align: middle;"> **matheorevel17**</a>
+- *Developed by* : <a href="https://github.com/byxis"><img src="https://github.com/byxis.png" width="20" style="border-radius:50%; vertical-align: middle;"> **byxis**</a>
 
 ### 2. Friends & Inter-relations
 - **Manage Friends**: Users can add, remove, or list friends.
 - **Search**: Functionality to search for other users.
+- *Designed by* : <a href="https://github.com/dawoldo"><img src="https://github.com/dawoldo.png" width="20" style="border-radius:50%; vertical-align: middle;"> **dawoldo**</a>
+- *Developed by* : <a href="https://github.com/byxis"><img src="https://github.com/byxis.png" width="20" style="border-radius:50%; vertical-align: middle;"> **byxis**</a>
 
 ### 3. Session Management
 - **Session Tracking**: Active sessions are tracked with unique IDs.
 - **Properties**: Management of session-specific properties, like the primary color and the font size.
+- *Designed by* : <a href="https://github.com/dawoldo"><img src="https://github.com/dawoldo.png" width="20" style="border-radius:50%; vertical-align: middle;"> **dawoldo**</a>
+- *Developed by* : <a href="https://github.com/byxis"><img src="https://github.com/byxis.png" width="20" style="border-radius:50%; vertical-align: middle;"> **byxis**</a>
