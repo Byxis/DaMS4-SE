@@ -1,6 +1,6 @@
 package fr.opal.service;
 
-import fr.opal.factory.AbstractUserFactory;
+import fr.opal.factory.AbstractDAOFactory;
 import fr.opal.type.Permission;
 import fr.opal.type.Profile;
 import fr.opal.type.Session;
@@ -39,7 +39,7 @@ public class AuthManager {
      * Returns a Session if authentication succeeds, null otherwise
      */
     public Session authenticate(String username, String password) {
-        AbstractUserFactory factory = AbstractUserFactory.getInstance();
+        AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         
         if (connectedUsers.containsKey(username)) {
             User user = connectedUsers.get(username);
@@ -84,7 +84,7 @@ public class AuthManager {
      * Registers a new user
      */
     public User register(String username, String password) {
-        AbstractUserFactory factory = AbstractUserFactory.getInstance();
+        AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         
         User existingUser = factory.createUserDAO().getUserById(username);
         if (existingUser != null) {
@@ -99,7 +99,7 @@ public class AuthManager {
      * Retrieves user profile
      */
     public Profile getProfile(int userId) {
-        AbstractUserFactory factory = AbstractUserFactory.getInstance();
+        AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         return factory.createUserDAO().getProfile(userId);
     }
 
@@ -107,7 +107,7 @@ public class AuthManager {
      * Updates user profile information
      */
     public void updateProfile(int userId, Profile profile) {
-        AbstractUserFactory factory = AbstractUserFactory.getInstance();
+        AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         factory.createUserDAO().updateProfile(userId, profile);
     }
 
@@ -115,7 +115,7 @@ public class AuthManager {
      * Retrieves list of permissions for a user
      */
     public List<Permission> listPermissions(int userId) {
-        AbstractUserFactory factory = AbstractUserFactory.getInstance();
+        AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         return factory.createUserDAO().listPermissions(userId);
     }
 
@@ -123,7 +123,7 @@ public class AuthManager {
      * Creates a new permission for a user
      */
     public Permission createPermission(int userId, String permissionName) {
-        AbstractUserFactory factory = AbstractUserFactory.getInstance();
+        AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         return factory.createUserDAO().createPermission(userId, permissionName);
     }
 
@@ -131,7 +131,7 @@ public class AuthManager {
      * Updates an existing permission
      */
     public void updatePermission(int permissionId, String permissionName) {
-        AbstractUserFactory factory = AbstractUserFactory.getInstance();
+        AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         factory.createUserDAO().updatePermission(permissionId, permissionName);
     }
 
@@ -139,7 +139,7 @@ public class AuthManager {
      * Deletes a permission
      */
     public void deletePermission(int permissionId) {
-        AbstractUserFactory factory = AbstractUserFactory.getInstance();
+        AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         factory.createUserDAO().deletePermission(permissionId);
     }
 

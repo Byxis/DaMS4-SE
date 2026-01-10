@@ -1,5 +1,6 @@
 package fr.opal.dao;
 
+import fr.opal.exception.DataAccessException;
 import fr.opal.type.User;
 import java.sql.*;
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ public class MySQLFriendsDAO extends FriendsDAO {
     }
 
     @Override
-    public ArrayList<User> getFriendList(int userId) throws SQLException {
+    public ArrayList<User> getFriendList(int userId) {
         ArrayList<User> friends = new ArrayList<>();
         String query = "SELECT u.id, u.username, u.password FROM users u " +
                       "INNER JOIN friendships f ON (u.id = f.user_id1 OR u.id = f.user_id2) " +
@@ -36,12 +37,14 @@ public class MySQLFriendsDAO extends FriendsDAO {
                     ));
                 }
             }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error getting friend list for user: " + userId, e);
         }
         return friends;
     }
 
     @Override
-    public ArrayList<User> getFollowedUsers(int userId) throws SQLException {
+    public ArrayList<User> getFollowedUsers(int userId) {
         ArrayList<User> followed = new ArrayList<>();
         String query = "SELECT u.id, u.username, u.password FROM users u " +
                       "INNER JOIN follows f ON u.id = f.followed_id " +
@@ -59,12 +62,14 @@ public class MySQLFriendsDAO extends FriendsDAO {
                     ));
                 }
             }
+        } catch (SQLException e) {
+             throw new DataAccessException("Error getting followed users for user: " + userId, e);
         }
         return followed;
     }
 
     @Override
-    public ArrayList<User> getFollowersList(int userId) throws SQLException {
+    public ArrayList<User> getFollowersList(int userId) {
         ArrayList<User> followers = new ArrayList<>();
         String query = "SELECT u.id, u.username, u.password FROM users u " +
                       "INNER JOIN follows f ON u.id = f.follower_id " +
@@ -82,12 +87,14 @@ public class MySQLFriendsDAO extends FriendsDAO {
                     ));
                 }
             }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error getting followers list for user: " + userId, e);
         }
         return followers;
     }
 
     @Override
-    public ArrayList<User> getBlockedUsers(int userId) throws SQLException {
+    public ArrayList<User> getBlockedUsers(int userId) {
         ArrayList<User> blocked = new ArrayList<>();
         String query = "SELECT u.id, u.username, u.password FROM users u " +
                       "INNER JOIN blocks b ON u.id = b.blocked_id " +
@@ -105,12 +112,14 @@ public class MySQLFriendsDAO extends FriendsDAO {
                     ));
                 }
             }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error getting blocked users for user: " + userId, e);
         }
         return blocked;
     }
 
     @Override
-    public ArrayList<User> getPendingFriendRequests(int userId) throws SQLException {
+    public ArrayList<User> getPendingFriendRequests(int userId) {
         ArrayList<User> requests = new ArrayList<>();
         String query = "SELECT u.id, u.username, u.password FROM users u " +
                       "INNER JOIN friendships f ON u.id = f.user_id1 " +
@@ -128,12 +137,14 @@ public class MySQLFriendsDAO extends FriendsDAO {
                     ));
                 }
             }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error getting pending friend requests for user: " + userId, e);
         }
         return requests;
     }
 
     @Override
-    public void addFriend(int fromUserId, int toUserId) throws SQLException {
+    public void addFriend(int fromUserId, int toUserId) {
         String query = "INSERT INTO friendships (user_id1, user_id2, status, created_at) " +
                       "VALUES (?, ?, 'PENDING', CURRENT_TIMESTAMP)";
         
@@ -141,11 +152,13 @@ public class MySQLFriendsDAO extends FriendsDAO {
             stmt.setInt(1, fromUserId);
             stmt.setInt(2, toUserId);
             stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Error adding friend request from " + fromUserId + " to " + toUserId, e);
         }
     }
 
     @Override
-    public void removeFriend(int userId, int friendId) throws SQLException {
+    public void removeFriend(int userId, int friendId) {
         String query = "DELETE FROM friendships WHERE " +
                       "(user_id1 = ? AND user_id2 = ?) OR (user_id1 = ? AND user_id2 = ?)";
         
@@ -155,11 +168,13 @@ public class MySQLFriendsDAO extends FriendsDAO {
             stmt.setInt(3, friendId);
             stmt.setInt(4, userId);
             stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Error removing friend relationship between " + userId + " and " + friendId, e);
         }
     }
 
     @Override
-    public void follow(int followerId, int followedId) throws SQLException {
+    public void follow(int followerId, int followedId) {
         String query = "INSERT INTO follows (follower_id, followed_id, created_at) " +
                       "VALUES (?, ?, CURRENT_TIMESTAMP)";
         
@@ -167,22 +182,26 @@ public class MySQLFriendsDAO extends FriendsDAO {
             stmt.setInt(1, followerId);
             stmt.setInt(2, followedId);
             stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Error following user " + followedId + " by " + followerId, e);
         }
     }
 
     @Override
-    public void unfollow(int followerId, int followedId) throws SQLException {
+    public void unfollow(int followerId, int followedId) {
         String query = "DELETE FROM follows WHERE follower_id = ? AND followed_id = ?";
         
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setInt(1, followerId);
             stmt.setInt(2, followedId);
             stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Error unfollowing user " + followedId + " by " + followerId, e);
         }
     }
 
     @Override
-    public void block(int userId, int blockedUserId) throws SQLException {
+    public void block(int userId, int blockedUserId) {
         String query = "INSERT INTO blocks (blocker_id, blocked_id, created_at) " +
                       "VALUES (?, ?, CURRENT_TIMESTAMP)";
         
@@ -190,6 +209,8 @@ public class MySQLFriendsDAO extends FriendsDAO {
             stmt.setInt(1, userId);
             stmt.setInt(2, blockedUserId);
             stmt.executeUpdate();
+        } catch (SQLException e) {
+             throw new DataAccessException("Error blocking user " + blockedUserId + " by " + userId, e);
         }
         
         // Remove any existing friend requests or friendships
@@ -199,18 +220,20 @@ public class MySQLFriendsDAO extends FriendsDAO {
     }
 
     @Override
-    public void unblock(int userId, int blockedUserId) throws SQLException {
+    public void unblock(int userId, int blockedUserId) {
         String query = "DELETE FROM blocks WHERE blocker_id = ? AND blocked_id = ?";
         
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setInt(1, userId);
             stmt.setInt(2, blockedUserId);
             stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Error unblocking user " + blockedUserId + " by " + userId, e);
         }
     }
 
     @Override
-    public int getFriendCount(int userId) throws SQLException {
+    public int getFriendCount(int userId) {
         String query = "SELECT COUNT(*) FROM friendships WHERE " +
                       "(user_id1 = ? OR user_id2 = ?) AND status = 'ACCEPTED'";
         
@@ -223,12 +246,14 @@ public class MySQLFriendsDAO extends FriendsDAO {
                     return rs.getInt(1);
                 }
             }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error getting friend count for user: " + userId, e);
         }
         return 0;
     }
 
     @Override
-    public int getFollowerCount(int userId) throws SQLException {
+    public int getFollowerCount(int userId) {
         String query = "SELECT COUNT(*) FROM follows WHERE followed_id = ?";
         
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
@@ -239,12 +264,14 @@ public class MySQLFriendsDAO extends FriendsDAO {
                     return rs.getInt(1);
                 }
             }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error getting follower count for user: " + userId, e);
         }
         return 0;
     }
 
     @Override
-    public ArrayList<User> searchUsers(String query) throws SQLException {
+    public ArrayList<User> searchUsers(String query) {
         ArrayList<User> users = new ArrayList<>();
         String sql = "SELECT id, username, password FROM users WHERE username LIKE ? LIMIT 50";
         
@@ -260,12 +287,14 @@ public class MySQLFriendsDAO extends FriendsDAO {
                     ));
                 }
             }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error searching users with query: " + query, e);
         }
         return users;
     }
 
     @Override
-    public boolean isBlocked(int userId, int otherUserId) throws SQLException {
+    public boolean isBlocked(int userId, int otherUserId) {
         String query = "SELECT COUNT(*) FROM blocks WHERE blocker_id = ? AND blocked_id = ?";
         
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
@@ -277,12 +306,14 @@ public class MySQLFriendsDAO extends FriendsDAO {
                     return rs.getInt(1) > 0;
                 }
             }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error checking if user " + otherUserId + " is blocked by " + userId, e);
         }
         return false;
     }
 
     @Override
-    public boolean isFriend(int userId, int otherUserId) throws SQLException {
+    public boolean isFriend(int userId, int otherUserId) {
         String query = "SELECT COUNT(*) FROM friendships WHERE " +
                       "((user_id1 = ? AND user_id2 = ?) OR (user_id1 = ? AND user_id2 = ?)) " +
                       "AND status = 'ACCEPTED'";
@@ -298,12 +329,14 @@ public class MySQLFriendsDAO extends FriendsDAO {
                     return rs.getInt(1) > 0;
                 }
             }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error checking friendship between " + userId + " and " + otherUserId, e);
         }
         return false;
     }
 
     @Override
-    public boolean isFollowing(int followerId, int followedId) throws SQLException {
+    public boolean isFollowing(int followerId, int followedId) {
         String query = "SELECT COUNT(*) FROM follows WHERE follower_id = ? AND followed_id = ?";
         
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
@@ -315,12 +348,14 @@ public class MySQLFriendsDAO extends FriendsDAO {
                     return rs.getInt(1) > 0;
                 }
             }
+        } catch (SQLException e) {
+             throw new DataAccessException("Error checking if " + followerId + " is following " + followedId, e);
         }
         return false;
     }
 
     @Override
-    public boolean hasPendingFriendRequest(int fromUserId, int toUserId) throws SQLException {
+    public boolean hasPendingFriendRequest(int fromUserId, int toUserId) {
         String query = "SELECT COUNT(*) FROM friendships WHERE " +
                       "user_id1 = ? AND user_id2 = ? AND status = 'PENDING'";
         
@@ -333,12 +368,14 @@ public class MySQLFriendsDAO extends FriendsDAO {
                     return rs.getInt(1) > 0;
                 }
             }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error checking pending friend request from " + fromUserId + " to " + toUserId, e);
         }
         return false;
     }
 
     @Override
-    public void acceptFriendRequest(int requesterId, int userId) throws SQLException {
+    public void acceptFriendRequest(int requesterId, int userId) {
         String query = "UPDATE friendships SET status = 'ACCEPTED', updated_at = CURRENT_TIMESTAMP " +
                       "WHERE user_id1 = ? AND user_id2 = ? AND status = 'PENDING'";
         
@@ -346,6 +383,8 @@ public class MySQLFriendsDAO extends FriendsDAO {
             stmt.setInt(1, requesterId);
             stmt.setInt(2, userId);
             stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Error accepting friend request from " + requesterId + " to " + userId, e);
         }
     }
 }

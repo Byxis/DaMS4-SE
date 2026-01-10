@@ -1,12 +1,10 @@
 package fr.opal.manager;
 
 import fr.opal.dao.FriendsDAO;
-import fr.opal.factory.FriendsFactory;
+import fr.opal.factory.AbstractDAOFactory;
 import fr.opal.type.User;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -23,7 +21,7 @@ public class FriendsManager {
     private static final Logger LOGGER = Logger.getLogger(FriendsManager.class.getName());
 
     private FriendsManager() {
-        this.friendsDAO = FriendsFactory.getInstance().createFriendsDAO();
+        this.friendsDAO = AbstractDAOFactory.getFactory().createFriendsDAO();
         this.friendList = new ArrayList<>();
         this.followedUsers = new ArrayList<>();
         this.blockedUsers = new ArrayList<>();
@@ -48,14 +46,10 @@ public class FriendsManager {
      * @param userId The ID of the user
      */
     public void loadUserData(int userId) {
-        try {
-            friendList = friendsDAO.getFriendList(userId);
-            followedUsers = friendsDAO.getFollowedUsers(userId);
-            blockedUsers = friendsDAO.getBlockedUsers(userId);
-            pendingFriendRequests = friendsDAO.getPendingFriendRequests(userId);
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to load user data", e);
-        }
+        friendList = friendsDAO.getFriendList(userId);
+        followedUsers = friendsDAO.getFollowedUsers(userId);
+        blockedUsers = friendsDAO.getBlockedUsers(userId);
+        pendingFriendRequests = friendsDAO.getPendingFriendRequests(userId);
     }
 
     /**
@@ -102,17 +96,12 @@ public class FriendsManager {
      * @return true if successful, false otherwise
      */
     public boolean addFriend(int fromUserId, int toUserId) {
-        try {
-            if (isBlocked(fromUserId, toUserId)) {
-                LOGGER.warning("Cannot add friend: user is blocked");
-                return false;
-            }
-            friendsDAO.addFriend(fromUserId, toUserId);
-            return true;
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to add friend", e);
+        if (isBlocked(fromUserId, toUserId)) {
+            LOGGER.warning("Cannot add friend: user is blocked");
             return false;
         }
+        friendsDAO.addFriend(fromUserId, toUserId);
+        return true;
     }
 
     /**
@@ -123,14 +112,9 @@ public class FriendsManager {
      * @return true if successful, false otherwise
      */
     public boolean removeFriend(int userId, int friendId) {
-        try {
-            friendsDAO.removeFriend(userId, friendId);
-            friendList.removeIf(user -> user.getId() == friendId);
-            return true;
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to remove friend", e);
-            return false;
-        }
+        friendsDAO.removeFriend(userId, friendId);
+        friendList.removeIf(user -> user.getId() == friendId);
+        return true;
     }
 
     /**
@@ -141,17 +125,12 @@ public class FriendsManager {
      * @return true if successful, false otherwise
      */
     public boolean follow(int followerId, int followedId) {
-        try {
-            if (isBlocked(followerId, followedId)) {
-                LOGGER.warning("Cannot follow: user is blocked");
-                return false;
-            }
-            friendsDAO.follow(followerId, followedId);
-            return true;
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to follow user", e);
+        if (isBlocked(followerId, followedId)) {
+            LOGGER.warning("Cannot follow: user is blocked");
             return false;
         }
+        friendsDAO.follow(followerId, followedId);
+        return true;
     }
 
     /**
@@ -162,14 +141,9 @@ public class FriendsManager {
      * @return true if successful, false otherwise
      */
     public boolean unfollow(int followerId, int followedId) {
-        try {
-            friendsDAO.unfollow(followerId, followedId);
-            followedUsers.removeIf(user -> user.getId() == followedId);
-            return true;
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to unfollow user", e);
-            return false;
-        }
+        friendsDAO.unfollow(followerId, followedId);
+        followedUsers.removeIf(user -> user.getId() == followedId);
+        return true;
     }
 
     /**
@@ -180,16 +154,11 @@ public class FriendsManager {
      * @return true if successful, false otherwise
      */
     public boolean block(int userId, int blockedUserId) {
-        try {
-            friendsDAO.block(userId, blockedUserId);
-            blockedUsers.add(new User(blockedUserId, "", ""));
-            friendList.removeIf(user -> user.getId() == blockedUserId);
-            followedUsers.removeIf(user -> user.getId() == blockedUserId);
-            return true;
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to block user", e);
-            return false;
-        }
+        friendsDAO.block(userId, blockedUserId);
+        blockedUsers.add(new User(blockedUserId, "", ""));
+        friendList.removeIf(user -> user.getId() == blockedUserId);
+        followedUsers.removeIf(user -> user.getId() == blockedUserId);
+        return true;
     }
 
     /**
@@ -200,14 +169,9 @@ public class FriendsManager {
      * @return true if successful, false otherwise
      */
     public boolean unblock(int userId, int blockedUserId) {
-        try {
-            friendsDAO.unblock(userId, blockedUserId);
-            blockedUsers.removeIf(user -> user.getId() == blockedUserId);
-            return true;
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to unblock user", e);
-            return false;
-        }
+        friendsDAO.unblock(userId, blockedUserId);
+        blockedUsers.removeIf(user -> user.getId() == blockedUserId);
+        return true;
     }
 
     /**
@@ -217,12 +181,7 @@ public class FriendsManager {
      * @return The number of friends
      */
     public int getFriendCount(int userId) {
-        try {
-            return friendsDAO.getFriendCount(userId);
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to get friend count", e);
-            return 0;
-        }
+        return friendsDAO.getFriendCount(userId);
     }
 
     /**
@@ -232,12 +191,7 @@ public class FriendsManager {
      * @return The number of followers
      */
     public int getFollowerCount(int userId) {
-        try {
-            return friendsDAO.getFollowerCount(userId);
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to get follower count", e);
-            return 0;
-        }
+        return friendsDAO.getFollowerCount(userId);
     }
 
     /**
@@ -247,12 +201,7 @@ public class FriendsManager {
      * @return ArrayList of User objects matching the query
      */
     public ArrayList<User> searchUsers(String query) {
-        try {
-            return friendsDAO.searchUsers(query);
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to search users", e);
-            return new ArrayList<>();
-        }
+        return friendsDAO.searchUsers(query);
     }
 
     /**
@@ -263,12 +212,7 @@ public class FriendsManager {
      * @return true if otherUserId has blocked userId
      */
     public boolean isBlocked(int userId, int otherUserId) {
-        try {
-            return friendsDAO.isBlocked(userId, otherUserId);
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to check block status", e);
-            return false;
-        }
+        return friendsDAO.isBlocked(userId, otherUserId);
     }
 
     /**
@@ -279,12 +223,7 @@ public class FriendsManager {
      * @return true if they are friends
      */
     public boolean isFriend(int userId, int otherUserId) {
-        try {
-            return friendsDAO.isFriend(userId, otherUserId);
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to check friend status", e);
-            return false;
-        }
+        return friendsDAO.isFriend(userId, otherUserId);
     }
 
     /**
@@ -295,12 +234,7 @@ public class FriendsManager {
      * @return true if followerId is following followedId
      */
     public boolean isFollowing(int followerId, int followedId) {
-        try {
-            return friendsDAO.isFollowing(followerId, followedId);
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to check follow status", e);
-            return false;
-        }
+        return friendsDAO.isFollowing(followerId, followedId);
     }
 
     /**
@@ -311,12 +245,7 @@ public class FriendsManager {
      * @return true if there is a pending request
      */
     public boolean hasPendingFriendRequest(int fromUserId, int toUserId) {
-        try {
-            return friendsDAO.hasPendingFriendRequest(fromUserId, toUserId);
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to check pending request", e);
-            return false;
-        }
+        return friendsDAO.hasPendingFriendRequest(fromUserId, toUserId);
     }
 
     /**
@@ -327,15 +256,10 @@ public class FriendsManager {
      * @return true if successful, false otherwise
      */
     public boolean acceptFriendRequest(int userId, int requesterId) {
-        try {
-            friendsDAO.acceptFriendRequest(requesterId, userId);
-            pendingFriendRequests.removeIf(user -> user.getId() == requesterId);
-            loadUserData(userId);
-            return true;
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to accept friend request", e);
-            return false;
-        }
+        friendsDAO.acceptFriendRequest(requesterId, userId);
+        pendingFriendRequests.removeIf(user -> user.getId() == requesterId);
+        loadUserData(userId);
+        return true;
     }
 
     /**
@@ -346,13 +270,8 @@ public class FriendsManager {
      * @return true if successful, false otherwise
      */
     public boolean declineFriendRequest(int userId, int requesterId) {
-        try {
-            friendsDAO.removeFriend(requesterId, userId);
-            pendingFriendRequests.removeIf(user -> user.getId() == requesterId);
-            return true;
-        } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to decline friend request", e);
-            return false;
-        }
+        friendsDAO.removeFriend(requesterId, userId);
+        pendingFriendRequests.removeIf(user -> user.getId() == requesterId);
+        return true;
     }
 }

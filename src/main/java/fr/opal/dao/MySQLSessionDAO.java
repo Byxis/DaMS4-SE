@@ -1,5 +1,6 @@
 package fr.opal.dao;
 
+import fr.opal.exception.DataAccessException;
 import fr.opal.type.SessionSettings;
 import fr.opal.type.StyleColor;
 import fr.opal.type.StylePalette;
@@ -17,7 +18,6 @@ public class MySQLSessionDAO extends SessionDAO {
      * Constructor with connection
      */
     public MySQLSessionDAO(Connection conn) {
-        super();
         this.conn = conn;
     }
 
@@ -49,9 +49,8 @@ public class MySQLSessionDAO extends SessionDAO {
                 return new SessionSettings();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error getting session settings for user: " + userId, e);
         }
-        return new SessionSettings();
     }
 
     @Override
@@ -63,7 +62,7 @@ public class MySQLSessionDAO extends SessionDAO {
             ps.setInt(2, userId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error saving font size for user: " + userId, e);
         }
     }
 
@@ -77,7 +76,7 @@ public class MySQLSessionDAO extends SessionDAO {
                 return rs.getInt("font_size");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error getting font size for user: " + userId, e);
         }
         return 14; // default
     }
@@ -91,7 +90,7 @@ public class MySQLSessionDAO extends SessionDAO {
             ps.setInt(2, userId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error saving style palette for user: " + userId, e);
         }
     }
 
@@ -108,7 +107,7 @@ public class MySQLSessionDAO extends SessionDAO {
                 } catch (Exception ignored) {}
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error getting style palette for user: " + userId, e);
         }
         return StylePalette.LIGHT;
     }
@@ -122,7 +121,7 @@ public class MySQLSessionDAO extends SessionDAO {
             ps.setInt(2, userId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error saving accent color for user: " + userId, e);
         }
     }
 
@@ -139,7 +138,7 @@ public class MySQLSessionDAO extends SessionDAO {
                 } catch (Exception ignored) {}
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error getting accent color for user: " + userId, e);
         }
         return StyleColor.BLUE;
     }
@@ -155,7 +154,7 @@ public class MySQLSessionDAO extends SessionDAO {
             ps.setInt(4, userId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error saving session settings for user: " + userId, e);
         }
     }
 
@@ -178,7 +177,7 @@ public class MySQLSessionDAO extends SessionDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error ensuring settings exist for user: " + userId, e);
         }
     }
 }
