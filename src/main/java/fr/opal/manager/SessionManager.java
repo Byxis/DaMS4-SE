@@ -143,20 +143,7 @@ public class SessionManager {
         String paletteClass = userSessionSettings.getStylePalette().getCssClass();
         root.getStyleClass().add(paletteClass);
 
-        String accentColor = userSessionSettings.getAccentColor().getHexCode();
-        String currentStyle = root.getStyle() != null ? root.getStyle() : "";
-        
-        currentStyle = currentStyle.replaceAll("-fx-accent-color:\\s*#[0-9A-Fa-f]+;?", "")
-                                   .replaceAll("-fx-accent:\\s*#[0-9A-Fa-f]+;?", "")
-                                   .replaceAll("-fx-focus-color:\\s*#[0-9A-Fa-f]+;?", "")
-                                   .replaceAll("-fx-faint-focus-color:\\s*#[0-9A-Fa-f]+;?", "");
-                                   
-        String newStyle = currentStyle + 
-                          "-fx-accent-color: " + accentColor + "; " +
-                          "-fx-accent: " + accentColor + "; " +
-                          "-fx-focus-color: " + accentColor + "; " +
-                          "-fx-faint-focus-color: transparent;";
-                          
+        String newStyle = fr.opal.util.ThemeHelper.updateStyle(root.getStyle(), userSessionSettings);
         root.setStyle(newStyle);
     }
 

@@ -54,22 +54,22 @@ ScrollPane {
 
 .subtitle-label {
     -fx-text-fill: -fx-theme-text-secondary;
-    -fx-font-size: 14;
+    -fx-font-size: 1em;
 }
 
 .muted-label {
     -fx-text-fill: -fx-theme-text-muted;
-    -fx-font-size: 12;
+    -fx-font-size: 0.85em;
 }
 
 .title-label {
     -fx-font-weight: bold;
-    -fx-font-size: 16;
+    -fx-font-size: 1.15em;
     -fx-text-fill: -fx-theme-text;
 }
 
 .title-large {
-    -fx-font-size: 32;
+    -fx-font-size: 2.3em;
     -fx-font-weight: bold;
     -fx-text-fill: -fx-theme-text;
 }
@@ -98,7 +98,7 @@ ScrollPane {
 .profile-button {
     -fx-background-color: derive(-fx-accent-color, 0%);
     -fx-text-fill: ladder(-fx-accent-color, white 49%, black 50%);
-    -fx-font-size: 13px;
+    -fx-font-size: 0.93em;
     -fx-font-weight: bold;
     -fx-background-radius: 8;
     -fx-cursor: hand;
@@ -153,7 +153,7 @@ ScrollPane {
 
 /* Navbar specific sizing */
 .navbar-button {
-    -fx-font-size: 20px;
+    -fx-font-size: 1.5em;
     -fx-min-width: 45;
     -fx-min-height: 45;
     -fx-padding: 8;
@@ -187,7 +187,7 @@ ScrollPane {
     -fx-background-radius: 50;
     -fx-min-width: 45;
     -fx-min-height: 45;
-    -fx-font-size: 18;
+    -fx-font-size: 1.3em;
 }
 
 /* ========================================
@@ -250,7 +250,7 @@ ScrollPane {
 .dialog-pane .button-bar .button {
     -fx-background-color: derive(-fx-accent-color, 0%);
     -fx-text-fill: ladder(-fx-accent-color, white 49%, black 50%);
-    -fx-font-size: 13px;
+    -fx-font-size: 0.93em;
     -fx-font-weight: bold;
     -fx-background-radius: 8;
 }
@@ -308,13 +308,13 @@ ScrollPane {
 
 .section-title {
     -fx-font-weight: bold;
-    -fx-font-size: 14;
+    -fx-font-size: 1em;
     -fx-text-fill: -fx-theme-text;
 }
 
 .info-text {
     -fx-text-fill: -fx-theme-text-muted;
-    -fx-font-size: 12;
+    -fx-font-size: 0.85em;
     -fx-font-style: italic;
 }
 

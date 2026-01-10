@@ -19,7 +19,7 @@
 
 .font-size-value {
     -fx-text-fill: -fx-theme-text-muted;
-    -fx-font-size: 12;
+    -fx-font-size: 0.85em;
 }
 
 .font-slider {
