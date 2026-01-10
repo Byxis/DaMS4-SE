@@ -1,3 +1,18 @@
+![](src/main/resources/banner_polytech_do.png)
+
+# Opal - Software Engineering Project
+
+<div align="center">
+
+**🌍 Language / Langue**
+
+[![🇺🇸 English](https://img.shields.io/badge/🇺🇸-English-blue?style=for-the-badge)](README.md)
+[![🇫🇷 Français](https://img.shields.io/badge/🇫🇷-Français-lightgrey?style=for-the-badge)](README.fr.md)
+
+---
+
+</div>
+
 # Opal - Software Engineering Project
 
 Opal is a Java-based application designed for note taking and organization. It allows users to create, edit, and manage notes in a structured manner. The application is built using JavaFX and follows a clean architecture pattern, separating concerns into distinct layers.
