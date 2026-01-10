@@ -12,48 +12,42 @@ import java.util.List;
 public abstract class UserDAO {
 
     /**
-     * Default constructor
-     */
-    public UserDAO() {
-    }
-
-    /**
      * Get user by username
      */
-    abstract public User getUserById(String username);
+    public abstract User getUserById(String username);
 
     /**
      * Create a new user
      */
-    abstract public User createUser(String username, String password);
+    public abstract User createUser(String username, String password);
 
     /**
      * Get user profile
      */
-    abstract public Profile getProfile(int userId);
+    public abstract Profile getProfile(int userId);
 
     /**
      * Update user profile
      */
-    abstract public void updateProfile(int userId, Profile profile);
+    public abstract void updateProfile(int userId, Profile profile);
 
     /**
      * Get list of permissions for a user
      */
-    abstract public List<Permission> listPermissions(int userId);
+    public abstract List<Permission> listPermissions(int userId);
 
     /**
      * Create a new permission for a user
      */
-    abstract public Permission createPermission(int userId, String permissionName);
+    public abstract Permission createPermission(int userId, String permissionName);
 
     /**
      * Update an existing permission
      */
-    abstract public void updatePermission(int permissionId, String permissionName);
+    public abstract void updatePermission(int permissionId, String permissionName);
 
     /**
      * Delete a permission
      */
-    abstract public void deletePermission(int permissionId);
+    public abstract void deletePermission(int permissionId);
 }

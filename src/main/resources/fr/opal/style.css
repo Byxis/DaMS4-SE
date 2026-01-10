@@ -54,22 +54,22 @@ ScrollPane {
 
 .subtitle-label {
     -fx-text-fill: -fx-theme-text-secondary;
-    -fx-font-size: 14;
+    -fx-font-size: 1em;
 }
 
 .muted-label {
     -fx-text-fill: -fx-theme-text-muted;
-    -fx-font-size: 12;
+    -fx-font-size: 0.85em;
 }
 
 .title-label {
     -fx-font-weight: bold;
-    -fx-font-size: 16;
+    -fx-font-size: 1.15em;
     -fx-text-fill: -fx-theme-text;
 }
 
 .title-large {
-    -fx-font-size: 32;
+    -fx-font-size: 2.3em;
     -fx-font-weight: bold;
     -fx-text-fill: -fx-theme-text;
 }
@@ -92,10 +92,13 @@ ScrollPane {
 
 /* Buttons */
 .button,
-.primary-button {
+.primary-button,
+.secondary-button,
+.navbar-button,
+.profile-button {
     -fx-background-color: derive(-fx-accent-color, 0%);
-    -fx-text-fill: white;
-    -fx-font-size: 13px;
+    -fx-text-fill: ladder(-fx-accent-color, white 49%, black 50%);
+    -fx-font-size: 0.93em;
     -fx-font-weight: bold;
     -fx-background-radius: 8;
     -fx-cursor: hand;
@@ -103,46 +106,88 @@ ScrollPane {
     -fx-faint-focus-color: transparent;
 }
 
+.navbar-button {
+    -fx-background-radius: 45;
+    -fx-padding: 1;
+}
+
 .button:focused,
-.primary-button:focused {
+.primary-button:focused,
+.secondary-button:focused,
+.navbar-button:focused,
+.profile-button:focused {
     -fx-background-color: derive(-fx-accent-color, 10%);
 }
 
 .button:hover,
-.primary-button:hover {
-    -fx-background-color: derive(-fx-accent-color, 5%);
+.primary-button:hover,
+.secondary-button:hover,
+.navbar-button:hover,
+.profile-button:hover {
+    -fx-background-color: derive(-fx-accent-color, -10%);
 }
 
 .dark .button,
-.dark .primary-button {
+.dark .primary-button,
+.dark .secondary-button,
+.dark .navbar-button,
+.dark .profile-button {
     -fx-background-color: derive(-fx-accent-color, 20%);
 }
 
 .dark .button:focused,
-.dark .primary-button:focused {
+.dark .primary-button:focused,
+.dark .secondary-button:focused,
+.dark .navbar-button:focused,
+.dark .profile-button:focused {
     -fx-background-color: derive(-fx-accent-color, 30%);
 }
 
 .dark .button:hover,
-.dark .primary-button:hover {
-    -fx-background-color: derive(-fx-accent-color, 25%);
+.dark .primary-button:hover,
+.dark .secondary-button:hover,
+.dark .navbar-button:hover,
+.dark .profile-button:hover {
+    -fx-background-color: derive(-fx-accent-color, 10%);
 }
 
-.secondary-button {
+/* Navbar specific sizing */
+.navbar-button {
+    -fx-font-size: 1.5em;
+    -fx-min-width: 45;
+    -fx-min-height: 45;
+    -fx-padding: 8;
+}
+
+.profile-container {
+    -fx-padding: 1 15 1 5;
+    -fx-background-radius: 45;
+    -fx-cursor: hand;
+    -fx-border-width: 1;
+    -fx-max-height: 49;
+}
+
+.profile-container:hover {
+    -fx-background-color: -fx-theme-bg-secondary;
+}
+
+.profile-container:hover .profile-button {
+    -fx-background-color: derive(-fx-accent-color, -10%);
+}
+
+.dark .profile-container:hover .profile-button {
+    -fx-background-color: derive(-fx-accent-color, 10%);
+}
+
+.profile-container VBox {
     -fx-background-color: transparent;
-    -fx-text-fill: -fx-theme-text;
-    -fx-font-size: 14px;
-    -fx-cursor: hand;
 }
 
-/* Hyperlinks */
-.hyperlink {
-    -fx-text-fill: -fx-theme-text;
-    -fx-underline: true;
-    -fx-cursor: hand;
-    -fx-border-radius: 0;
-    -fx-focus-color: #999999;
-    -fx-faint-focus-color: transparent;
+.profile-button {
+    -fx-background-radius: 50;
+    -fx-min-width: 45;
+    -fx-min-height: 45;
+    -fx-font-size: 1.3em;
 }
 
 /* ========================================
@@ -151,38 +196,9 @@ ScrollPane {
 
 .header-bar {
     -fx-background-color: -fx-theme-bg;
-    -fx-border-color: -fx-theme-border;
+    -fx-border-color: -fx-accent-color;
     -fx-border-width: 0 0 1 0;
     -fx-padding: 0 25;
-}
-
-/* Navbar action buttons (settings, logout) */
-.navbar-button {
-    -fx-background-color: transparent;
-    -fx-text-fill: -fx-theme-text;
-    -fx-font-size: 24px;
-    -fx-min-width: 50;
-    -fx-min-height: 50;
-    -fx-cursor: hand;
-    -fx-padding: 10;
-}
-
-.navbar-button:hover {
-    -fx-background-color: -fx-theme-bg-secondary;
-    -fx-background-radius: 8;
-}
-
-.profile-button {
-    -fx-background-color: derive(-fx-accent-color, 0%);
-    -fx-text-fill: white;
-    -fx-background-radius: 50;
-    -fx-min-width: 45;
-    -fx-min-height: 45;
-    -fx-font-size: 18;
-}
-
-.dark .profile-button {
-    -fx-background-color: derive(-fx-accent-color, 20%);
 }
 
 /* ========================================
@@ -231,6 +247,22 @@ ScrollPane {
     -fx-background-color: -fx-theme-bg;
 }
 
+.dialog-pane .button-bar .button {
+    -fx-background-color: derive(-fx-accent-color, 0%);
+    -fx-text-fill: ladder(-fx-accent-color, white 49%, black 50%);
+    -fx-font-size: 0.93em;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+}
+
+.dialog-pane .button-bar .button:hover {
+    -fx-background-color: derive(-fx-accent-color, -10%);
+}
+
+.dark .dialog-pane .button-bar .button:hover {
+    -fx-background-color: derive(-fx-accent-color, 10%);
+}
+
 /* ========================================
    FORM COMPONENTS (Radio, Slider, etc.)
    ======================================== */
@@ -276,13 +308,13 @@ ScrollPane {
 
 .section-title {
     -fx-font-weight: bold;
-    -fx-font-size: 14;
+    -fx-font-size: 1em;
     -fx-text-fill: -fx-theme-text;
 }
 
 .info-text {
     -fx-text-fill: -fx-theme-text-muted;
-    -fx-font-size: 12;
+    -fx-font-size: 0.85em;
     -fx-font-style: italic;
 }
 

@@ -10,12 +10,6 @@ import fr.opal.type.StylePalette;
 public abstract class SessionDAO {
 
     /**
-     * Default constructor
-     */
-    public SessionDAO() {
-    }
-
-    /**
      * Get session settings for a user
      * @param userId The user ID
      * @return SessionSettings or null if not found

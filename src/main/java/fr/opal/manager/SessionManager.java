@@ -1,7 +1,7 @@
 package fr.opal.manager;
 
 import fr.opal.dao.SessionDAO;
-import fr.opal.factory.SessionDAOFactory;
+import fr.opal.factory.AbstractDAOFactory;
 import fr.opal.type.SessionSettings;
 import fr.opal.type.StyleColor;
 import fr.opal.type.StylePalette;
@@ -42,7 +42,7 @@ public class SessionManager {
      */
     public void loadSettingsForUser(int userId) {
         this.currentUserId = userId;
-        SessionDAO dao = SessionDAOFactory.getInstance().createSessionDAO();
+        SessionDAO dao = AbstractDAOFactory.getFactory().createSessionDAO();
         this.userSessionSettings = dao.getSessionSettings(userId);
         if (userSessionSettings == null) {
             this.userSessionSettings = new SessionSettings();
@@ -64,7 +64,7 @@ public class SessionManager {
     public void saveFontSize(int fontSize) {
         if (currentUserId <= 0) return;
         userSessionSettings.setFontSize(fontSize);
-        SessionDAO dao = SessionDAOFactory.getInstance().createSessionDAO();
+        SessionDAO dao = AbstractDAOFactory.getFactory().createSessionDAO();
         dao.saveFontSize(currentUserId, fontSize);
     }
 
@@ -74,7 +74,7 @@ public class SessionManager {
      * @return The font size
      */
     public int getFontSize(int userId) {
-        SessionDAO dao = SessionDAOFactory.getInstance().createSessionDAO();
+        SessionDAO dao = AbstractDAOFactory.getFactory().createSessionDAO();
         return dao.getFontSize(userId);
     }
 
@@ -85,7 +85,7 @@ public class SessionManager {
     public void saveStylePalette(StylePalette stylePalette) {
         if (currentUserId <= 0) return;
         userSessionSettings.setStylePalette(stylePalette);
-        SessionDAO dao = SessionDAOFactory.getInstance().createSessionDAO();
+        SessionDAO dao = AbstractDAOFactory.getFactory().createSessionDAO();
         dao.saveStylePalette(currentUserId, stylePalette);
     }
 
@@ -95,7 +95,7 @@ public class SessionManager {
      * @return The style palette
      */
     public StylePalette getStylePalette(int userId) {
-        SessionDAO dao = SessionDAOFactory.getInstance().createSessionDAO();
+        SessionDAO dao = AbstractDAOFactory.getFactory().createSessionDAO();
         return dao.getStylePalette(userId);
     }
 
@@ -106,7 +106,7 @@ public class SessionManager {
     public void saveAccentColor(StyleColor accentColor) {
         if (currentUserId <= 0) return;
         userSessionSettings.setAccentColor(accentColor);
-        SessionDAO dao = SessionDAOFactory.getInstance().createSessionDAO();
+        SessionDAO dao = AbstractDAOFactory.getFactory().createSessionDAO();
         dao.saveAccentColor(currentUserId, accentColor);
     }
 
@@ -116,7 +116,7 @@ public class SessionManager {
      * @return The accent color
      */
     public StyleColor getAccentColor(int userId) {
-        SessionDAO dao = SessionDAOFactory.getInstance().createSessionDAO();
+        SessionDAO dao = AbstractDAOFactory.getFactory().createSessionDAO();
         return dao.getAccentColor(userId);
     }
 
@@ -138,19 +138,13 @@ public class SessionManager {
     public void applyTheme(Parent root) {
         if (root == null) return;
 
-        // Remove existing theme classes
         root.getStyleClass().removeAll("light", "dark");
         
-        // Add current palette class
         String paletteClass = userSessionSettings.getStylePalette().getCssClass();
         root.getStyleClass().add(paletteClass);
 
-        // Apply accent color as CSS variable via inline style
-        String accentColor = userSessionSettings.getAccentColor().getHexCode();
-        String currentStyle = root.getStyle() != null ? root.getStyle() : "";
-        // Remove old accent color if present
-        currentStyle = currentStyle.replaceAll("-fx-accent-color:\\s*#[0-9A-Fa-f]+;?", "");
-        root.setStyle(currentStyle + "-fx-accent-color: " + accentColor + ";");
+        String newStyle = fr.opal.util.ThemeHelper.updateStyle(root.getStyle(), userSessionSettings);
+        root.setStyle(newStyle);
     }
 
     /**

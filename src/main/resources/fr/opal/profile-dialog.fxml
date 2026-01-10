@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.scene.control.ButtonType?>
+<?import javafx.scene.control.DialogPane?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
 
-<DialogPane prefWidth="400.0" stylesheets="@style.css" styleClass="dialog-content" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+<DialogPane prefWidth="400.0" styleClass="dialog-content" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
     <header>
         <VBox style="-fx-padding: 20 20 0 20; -fx-spacing: 5;">
             <children>
-                <Label styleClass="title-large" text="User Profile" style="-fx-font-size: 24;" />
+                <Label style="-fx-font-size: 24;" styleClass="title-large" text="User Profile" />
                 <Label styleClass="subtitle-label" text="Edit your personal information below." />
             </children>
         </VBox>
@@ -30,14 +32,14 @@
                 </VBox>
                 <VBox spacing="5.0">
                     <children>
-                        <Label styleClass="section-title" text="First Name" />
-                        <TextField fx:id="firstNameField" prefHeight="40.0" promptText="Enter first name" />
+                        <Label styleClass="section-title" text="Display Name" />
+                        <TextField fx:id="displayNameField" prefHeight="40.0" promptText="Enter display name" />
                     </children>
                 </VBox>
                 <VBox spacing="5.0">
                     <children>
-                        <Label styleClass="section-title" text="Last Name" />
-                        <TextField fx:id="lastNameField" prefHeight="40.0" promptText="Enter last name" />
+                        <Label styleClass="section-title" text="Bio" />
+                        <TextField fx:id="bioField" alignment="TOP_LEFT" prefHeight="76.0" prefWidth="328.0" promptText="Enter a few sentences to introduce yourself" />
                     </children>
                 </VBox>
             </children>

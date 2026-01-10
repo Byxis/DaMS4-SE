@@ -12,18 +12,14 @@ public class ColorUtil {
      * @return "#000000" for black text or "#FFFFFF" for white text
      */
     public static String getContrastTextColor(String hexColor) {
-        // Remove # if present
         String hex = hexColor.replace("#", "");
         
-        // Parse RGB values
         int r = Integer.parseInt(hex.substring(0, 2), 16);
         int g = Integer.parseInt(hex.substring(2, 4), 16);
         int b = Integer.parseInt(hex.substring(4, 6), 16);
         
-        // Calculate relative luminance using WCAG formula
         double luminance = calculateRelativeLuminance(r, g, b);
         
-        // If luminance is high (bright color), use black text; otherwise use white
         return luminance > 0.5 ? "#000000" : "#FFFFFF";
     }
 
@@ -35,17 +31,14 @@ public class ColorUtil {
      * @return Luminance value (0-1)
      */
     private static double calculateRelativeLuminance(int r, int g, int b) {
-        // Normalize to 0-1
         double rNorm = r / 255.0;
         double gNorm = g / 255.0;
         double bNorm = b / 255.0;
         
-        // Apply gamma correction
         rNorm = rNorm <= 0.03928 ? rNorm / 12.92 : Math.pow((rNorm + 0.055) / 1.055, 2.4);
         gNorm = gNorm <= 0.03928 ? gNorm / 12.92 : Math.pow((gNorm + 0.055) / 1.055, 2.4);
         bNorm = bNorm <= 0.03928 ? bNorm / 12.92 : Math.pow((bNorm + 0.055) / 1.055, 2.4);
         
-        // Calculate luminance
         return 0.2126 * rNorm + 0.7152 * gNorm + 0.0722 * bNorm;
     }
 }

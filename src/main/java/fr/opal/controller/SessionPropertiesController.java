@@ -10,6 +10,9 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Controller for session properties (appearance settings)
  */
@@ -33,6 +36,8 @@ public class SessionPropertiesController {
     private SessionPropertiesFacade facade;
     private StyleColor selectedAccentColor;
     private Runnable onSettingsChanged;
+
+    private static final List<Runnable> globalSettingsListeners = new ArrayList<>();
 
     public SessionPropertiesController() {
         this.facade = SessionPropertiesFacade.getInstance();
@@ -203,5 +208,27 @@ public class SessionPropertiesController {
         if (onSettingsChanged != null) {
             onSettingsChanged.run();
         }
+        for (Runnable listener : globalSettingsListeners) {
+            listener.run();
+        }
+
+        if (rootContainer != null) {
+            // Apply the full theme (classes + variables) to the local view immediately
+            facade.applyTheme(rootContainer);
+        }
+    }
+
+    /**
+     * Add a global listener for settings changes.
+     */
+    public static void addGlobalSettingsListener(Runnable listener) {
+        globalSettingsListeners.add(listener);
+    }
+
+    /**
+     * Remove a global listener for settings changes.
+     */
+    public static void removeGlobalSettingsListener(Runnable listener) {
+        globalSettingsListeners.remove(listener);
     }
 }
