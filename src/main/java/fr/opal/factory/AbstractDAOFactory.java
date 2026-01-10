@@ -1,5 +1,6 @@
 package fr.opal.factory;
 
+import fr.opal.dao.EntryDAO;
 import fr.opal.dao.FriendsDAO;
 import fr.opal.dao.SessionDAO;
 import fr.opal.dao.UserDAO;
@@ -37,4 +38,5 @@ public abstract class AbstractDAOFactory {
     public abstract UserDAO createUserDAO();
     public abstract SessionDAO createSessionDAO();
     public abstract FriendsDAO createFriendsDAO();
+    public abstract EntryDAO createEntryDAO();
 }

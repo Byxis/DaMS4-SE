@@ -13,125 +13,98 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane prefHeight="800.0" prefWidth="1200.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.EntryController">
-   <!-- TOP: Navigation Bar -->
-   <top>
-      <HBox alignment="CENTER_LEFT" prefHeight="80.0" prefWidth="1200.0" style="-fx-padding: 0 25; -fx-background-color: #F8F8F8; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;">
-         <children>
-            <!-- Profile Section -->
-            <HBox alignment="CENTER_LEFT" onMouseClicked="#openProfileDialog" spacing="15.0" style="-fx-cursor: hand;">
-               <children>
-                  <Button fx:id="userProfileBtn" mnemonicParsing="false" style="-fx-background-color: #2D2D2D; -fx-text-fill: white; -fx-background-radius: 50; -fx-min-width: 45; -fx-min-height: 45; -fx-font-size: 18;" text="👤" />
-                  <VBox alignment="CENTER_LEFT">
-                     <children>
-                        <Label fx:id="usernameLabel" style="-fx-font-weight: bold; -fx-font-size: 16;" text="Username" />
-                        <Label style="-fx-text-fill: #888888; -fx-font-size: 12;" text="Entries" />
-                     </children>
-                  </VBox>
-               </children>
-            </HBox>
-
-            <!-- Spacer -->
-            <HBox HBox.hgrow="ALWAYS" />
-
-            <!-- Navigation Buttons -->
-            <Button fx:id="homeBtn" mnemonicParsing="false" onAction="#onNavigateHome" style="-fx-background-color: transparent; -fx-text-fill: #2D2D2D; -fx-font-size: 20; -fx-cursor: hand;" text="🏠 Home" />
-            <Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#logout" style="-fx-background-color: transparent; -fx-text-fill: #2D2D2D; -fx-font-size: 20; -fx-cursor: hand;" text="Logout 🚪" />
-         </children>
-      </HBox>
-   </top>
-
+<BorderPane prefHeight="800.0" prefWidth="1200.0" styleClass="main-container" stylesheets="@style.css, @entry.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.EntryController">
    <!-- CENTER: Main Content (2-Column Layout) -->
    <center>
-      <SplitPane dividerPositions="0.7" prefHeight="720.0" prefWidth="1200.0">
+      <SplitPane dividerPositions="0.7" prefHeight="720.0" prefWidth="1200.0" styleClass="entry-split-pane">
          <!-- LEFT COLUMN: Entry Content (70%) -->
-         <VBox prefHeight="720.0" prefWidth="840.0" spacing="10.0" style="-fx-padding: 20;">
+         <VBox prefHeight="720.0" prefWidth="840.0" spacing="10.0" style="-fx-padding: 20;" styleClass="entry-left-column">
             <!-- Project Title Header -->
-            <HBox alignment="CENTER_LEFT" prefHeight="40.0" spacing="15.0" style="-fx-background-color: #F8F8F8; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0; -fx-padding: 0 10;">
+            <HBox alignment="CENTER_LEFT" prefHeight="40.0" spacing="15.0" styleClass="entry-header">
                <children>
-                  <Label fx:id="projectTitle" style="-fx-font-size: 18; -fx-font-weight: bold;" text="Project Name" />
+                  <Label fx:id="projectTitle" styleClass="entry-header-title" text="Project Name" />
                   <HBox HBox.hgrow="ALWAYS" />
-                  <Button fx:id="importBtn" mnemonicParsing="false" onAction="#onImport" text="Import" />
-                  <Button fx:id="exportBtn" mnemonicParsing="false" onAction="#onExport" text="Export" />
+                  <Button fx:id="importBtn" mnemonicParsing="false" onAction="#onImport" styleClass="entry-action-button" text="Import" />
+                  <Button fx:id="exportBtn" mnemonicParsing="false" onAction="#onExport" styleClass="entry-action-button" text="Export" />
                </children>
             </HBox>
 
             <!-- Entry Title -->
             <VBox spacing="5.0">
                <children>
-                  <Label style="-fx-font-weight: bold; -fx-font-size: 12;" text="Title" />
-                  <TextField fx:id="entryTitleField" prefHeight="35.0" promptText="Entry title" />
+                  <Label styleClass="entry-label" text="Title" />
+                  <TextField fx:id="entryTitleField" prefHeight="35.0" promptText="Entry title" styleClass="entry-text-field" />
                </children>
             </VBox>
 
             <!-- Entry Content -->
             <VBox spacing="5.0" VBox.vgrow="ALWAYS">
                <children>
-                  <Label style="-fx-font-weight: bold; -fx-font-size: 12;" text="Content" />
-                  <TextArea fx:id="entryContent" prefHeight="400.0" wrapText="true" VBox.vgrow="ALWAYS" />
+                  <Label styleClass="entry-label" text="Content" />
+                  <TextArea fx:id="entryContent" prefHeight="400.0" wrapText="true" VBox.vgrow="ALWAYS" styleClass="entry-textarea" />
                </children>
             </VBox>
 
             <!-- Action Buttons -->
-            <HBox alignment="CENTER_LEFT" prefHeight="50.0" spacing="10.0" style="-fx-background-color: #F8F8F8; -fx-border-color: #E0E0E0; -fx-border-width: 1 0 0 0; -fx-padding: 10;">
+            <HBox alignment="CENTER_LEFT" prefHeight="50.0" spacing="10.0" styleClass="entry-footer">
                <children>
-                  <Button fx:id="saveEntryBtn" mnemonicParsing="false" onAction="#onSaveEntry" text="Save Entry" />
-                  <Button fx:id="createEntryBtn" mnemonicParsing="false" onAction="#onCreateEntry" text="Create Entry" />
-                  <Button fx:id="deleteEntryBtn" mnemonicParsing="false" onAction="#onDeleteEntry" text="Delete Entry" />
+                  <Button fx:id="saveEntryBtn" mnemonicParsing="false" onAction="#onSaveEntry" styleClass="entry-action-button" text="Save Entry" />
+                  <Button fx:id="createEntryBtn" mnemonicParsing="false" onAction="#onCreateEntry" styleClass="entry-action-button" text="Create Entry" />
+                  <Button fx:id="deleteEntryBtn" mnemonicParsing="false" onAction="#onDeleteEntry" styleClass="entry-action-button" text="Delete Entry" />
                   <HBox HBox.hgrow="ALWAYS" />
-                  <Button fx:id="projectRootRedirBtn" mnemonicParsing="false" onAction="#onNavigateToRoot" text="📍 Root" />
-                  <Button fx:id="entryParentRedirBtn" mnemonicParsing="false" onAction="#onNavigateToParent" text="⬆️ Parent" />
-                  <Button fx:id="subDirBtn" mnemonicParsing="false" onAction="#onShowSubDirectories" text="📂 Children" />
+                  <Button fx:id="projectRootRedirBtn" mnemonicParsing="false" onAction="#onNavigateToRoot" styleClass="entry-nav-button" text="📍 Root" />
+                  <Button fx:id="entryParentRedirBtn" mnemonicParsing="false" onAction="#onNavigateToParent" styleClass="entry-nav-button" text="⬆️ Parent" />
+                  <Button fx:id="subDirBtn" mnemonicParsing="false" onAction="#onShowSubDirectories" styleClass="entry-nav-button" text="📂 Children" />
                </children>
             </HBox>
          </VBox>
 
          <!-- RIGHT COLUMN: Permissions & Comments (30%) -->
-         <VBox prefHeight="720.0" prefWidth="360.0" spacing="0.0" style="-fx-border-color: #E0E0E0; -fx-border-width: 1 0 0 0;">
+         <VBox prefHeight="720.0" prefWidth="360.0" spacing="0.0" styleClass="entry-right-column">
             <!-- SECTION 1: PERMISSIONS -->
-            <VBox spacing="10.0" style="-fx-padding: 15; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;">
+            <VBox spacing="10.0" styleClass="permissions-section">
                <children>
-                  <Label style="-fx-font-weight: bold; -fx-font-size: 14;" text="Permissions" />
+                  <Label styleClass="section-header" text="Permissions" />
                   
                   <!-- Users with Permissions List -->
-                  <ListView fx:id="usersPermissionsList" prefHeight="150.0" VBox.vgrow="ALWAYS">
+                  <ListView fx:id="usersPermissionsList" prefHeight="150.0" styleClass="entry-list-view" VBox.vgrow="ALWAYS">
                      <VBox.margin>
                         <Insets bottom="5.0" />
                      </VBox.margin>
                   </ListView>
 
                   <!-- Add Permission Controls -->
-                  <Separator />
-                  <Label style="-fx-font-weight: bold; -fx-font-size: 12;" text="Grant Permission" />
+                  <Separator styleClass="entry-separator" />
+                  <Label styleClass="entry-label" text="Grant Permission" />
                   
                   <VBox spacing="5.0">
                      <children>
-                        <TextField fx:id="usernameField" promptText="Username" />
-                        <ComboBox fx:id="permissionComboBox" prefWidth="330.0" />
-                        <Button fx:id="addPermissionBtn" mnemonicParsing="false" onAction="#onAddPermission" style="-fx-padding: 8;" text="Add Permission" />
+                        <TextField fx:id="usernameField" promptText="Username" styleClass="entry-text-field" />
+                        <ComboBox fx:id="permissionComboBox" prefWidth="330.0" styleClass="permission-combo-box" />
+                        <Button fx:id="addPermissionBtn" mnemonicParsing="false" onAction="#onAddPermission" styleClass="entry-action-button" text="Add Permission" />
                      </children>
                   </VBox>
                </children>
             </VBox>
 
             <!-- SECTION 2: COMMENTS -->
-            <VBox spacing="10.0" style="-fx-padding: 15;" VBox.vgrow="ALWAYS">
+            <VBox spacing="10.0" styleClass="comments-section" VBox.vgrow="ALWAYS">
                <children>
-                  <Label style="-fx-font-weight: bold; -fx-font-size: 14;" text="Comments" />
+                  <Label styleClass="section-header" text="Comments" />
                   
                   <!-- Comments List -->
-                  <ListView fx:id="commentsList" prefHeight="200.0" VBox.vgrow="ALWAYS">
+                  <ListView fx:id="commentsList" prefHeight="200.0" styleClass="entry-list-view" VBox.vgrow="ALWAYS">
                      <VBox.margin>
                         <Insets bottom="5.0" />
                      </VBox.margin>
                   </ListView>
 
                   <!-- Add Comment -->
-                  <Separator />
-                  <Label style="-fx-font-weight: bold; -fx-font-size: 12;" text="Add Comment" />
+                  <Separator styleClass="entry-separator" />
+                  <Label styleClass="entry-label" text="Add Comment" />
                   
-                  <TextArea fx:id="commentInput" prefHeight="80.0" promptText="Write a comment..." wrapText="true" />
-                  <Button fx:id="addCommentBtn" mnemonicParsing="false" onAction="#onAddComment" style="-fx-padding: 8;" text="Post Comment" />
+                  <TextArea fx:id="commentInput" prefHeight="80.0" promptText="Write a comment..." wrapText="true" styleClass="entry-textarea" />
+                  <Button fx:id="addCommentBtn" mnemonicParsing="false" onAction="#onAddComment" styleClass="entry-action-button" text="Post Comment" />
                </children>
             </VBox>
          </VBox>

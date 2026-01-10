@@ -127,12 +127,12 @@ public class HomeController {
     }
 
     /**
-     * Navigates to the entry management view
+     * Navigates to the entry management view (opens in new window)
      */
     @FXML
     private void goToEntryView() {
         try {
-            sceneManager.switchTo("/fr/opal/entry.fxml");
+            sceneManager.openNewWindow("/fr/opal/entry.fxml", "Entries - Opal", 1200, 800);
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -1,5 +1,6 @@
 package fr.opal.dao;
 
+import fr.opal.exception.DataAccessException;
 import fr.opal.type.*;
 import java.sql.*;
 import java.util.ArrayList;
@@ -7,8 +8,9 @@ import java.util.List;
 
 /**
  * MySQL implementation of EntryDAO
+ * Follows the same pattern as MySQLUserDAO from main branch
  */
-public class MySQLEntryDAO implements EntryDAO {
+public class MySQLEntryDAO extends EntryDAO {
     private Connection conn;
     private MySQLUserDAO userDAO;
 
@@ -18,78 +20,6 @@ public class MySQLEntryDAO implements EntryDAO {
     public MySQLEntryDAO(Connection conn) {
         this.conn = conn;
         this.userDAO = new MySQLUserDAO(conn);
-        createTables();
-    }
-
-    /**
-     * Creates all necessary entry-related tables with idempotency
-     * Checks if tables exist before creating them
-     */
-    private void createTables() {
-        try {
-            createEntriesTable();
-            createCommentsTable();
-            createEntryPermissionsTable();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to create entry tables: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Creates the entries table if it doesn't exist
-     */
-    private void createEntriesTable() throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS entries (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY," +
-                "title VARCHAR(255) NOT NULL," +
-                "content LONGTEXT," +
-                "parent_id INT," +
-                "author_id INT NOT NULL," +
-                "creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                "last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
-                "FOREIGN KEY (parent_id) REFERENCES entries(id) ON DELETE CASCADE," +
-                "FOREIGN KEY (author_id) REFERENCES users(id)" +
-                ")";
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-        }
-    }
-
-    /**
-     * Creates the comments table if it doesn't exist
-     */
-    private void createCommentsTable() throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS comments (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY," +
-                "entry_id INT NOT NULL," +
-                "content TEXT NOT NULL," +
-                "author_id INT NOT NULL," +
-                "created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                "FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE," +
-                "FOREIGN KEY (author_id) REFERENCES users(id)" +
-                ")";
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-        }
-    }
-
-    /**
-     * Creates the entry_permissions table if it doesn't exist
-     * Uses username instead of user_id for permission lookup to avoid ID conflicts
-     */
-    private void createEntryPermissionsTable() throws SQLException {
-        
-        String sql = "CREATE TABLE IF NOT EXISTS entry_permissions (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY," +
-                "entry_id INT NOT NULL," +
-                "username VARCHAR(255) NOT NULL," +
-                "permission VARCHAR(50)," +
-                "FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE," +
-                "UNIQUE KEY unique_entry_user (entry_id, username)" +
-                ")";
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-        }
     }
 
     /**
@@ -153,7 +83,7 @@ public class MySQLEntryDAO implements EntryDAO {
             savePermissions(entry);
             
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error saving entry: " + entry.getId(), e);
         }
     }
 
@@ -175,7 +105,7 @@ public class MySQLEntryDAO implements EntryDAO {
             
             // Ensure author exists and has valid ID
             if (entry.getAuthor() == null || entry.getAuthor().getId() == 0) {
-                throw new RuntimeException("Entry author is missing or has invalid ID");
+                throw new DataAccessException("Entry author is missing or has invalid ID", null);
             }
             ps.setInt(4, entry.getAuthor().getId());
             ps.executeUpdate();
@@ -195,7 +125,7 @@ public class MySQLEntryDAO implements EntryDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error creating entry: " + entry.getTitle(), e);
         }
         return 0;
     }
@@ -210,7 +140,7 @@ public class MySQLEntryDAO implements EntryDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error deleting entry: " + id, e);
         }
     }
 
@@ -228,7 +158,7 @@ public class MySQLEntryDAO implements EntryDAO {
                 entries.add(buildEntryFromResultSet(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error retrieving root entries", e);
         }
         return entries;
     }
@@ -249,7 +179,7 @@ public class MySQLEntryDAO implements EntryDAO {
                 entries.add(entry);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error retrieving child entries for parent: " + parentId, e);
         }
         return entries;
     }
@@ -267,7 +197,7 @@ public class MySQLEntryDAO implements EntryDAO {
                 return buildEntryFromResultSet(rs);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error loading entry: " + id, e);
         }
         return null;
     }
@@ -347,7 +277,7 @@ public class MySQLEntryDAO implements EntryDAO {
                 comments.add(comment);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error loading comments for entry: " + entryId, e);
         }
         return comments;
     }
@@ -364,7 +294,7 @@ public class MySQLEntryDAO implements EntryDAO {
             ps.setInt(1, entry.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error deleting comments for entry: " + entry.getId(), e);
         }
         
         // Insert new comments
@@ -377,7 +307,7 @@ public class MySQLEntryDAO implements EntryDAO {
                 ps.executeUpdate();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error saving comments for entry: " + entry.getId(), e);
         }
     }
 
@@ -405,7 +335,7 @@ public class MySQLEntryDAO implements EntryDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error loading permissions for entry: " + entryId, e);
         }
         
         manager.setUserPermissions(permissions);
@@ -425,7 +355,7 @@ public class MySQLEntryDAO implements EntryDAO {
             ps.setInt(1, entry.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error deleting permissions for entry: " + entry.getId(), e);
         }
         
         // Insert new permissions using username instead of user_id
@@ -444,7 +374,7 @@ public class MySQLEntryDAO implements EntryDAO {
                 ps.executeUpdate();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error saving permissions for entry: " + entry.getId(), e);
         }
     }
 
@@ -463,7 +393,7 @@ public class MySQLEntryDAO implements EntryDAO {
             ps.setInt(2, entry.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException("Error updating entry relationships: " + entry.getId(), e);
         }
     }
 

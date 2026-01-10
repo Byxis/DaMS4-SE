@@ -2,10 +2,12 @@ package fr.opal.controller;
 
 import fr.opal.type.*;
 import fr.opal.service.SceneManager;
+import fr.opal.facade.AuthFacade;
+import fr.opal.facade.EntryFacade;
+import fr.opal.facade.SessionPropertiesFacade;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import fr.opal.service.EntryManager;
 import fr.opal.service.AuthManager;
@@ -15,8 +17,6 @@ import fr.opal.service.EntryJsonImporter;
 import fr.opal.service.EntryXmlImporter;
 import fr.opal.service.EntryJsonExporter;
 import fr.opal.service.EntryXmlExporter;
-import fr.opal.facade.AuthFacade;
-import fr.opal.facade.EntryFacade;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,16 +27,6 @@ import java.util.Optional;
  * Controller for entry management UI
  */
 public class EntryController {
-    // Navbar fields
-    @FXML
-    private Button userProfileBtn;
-    @FXML
-    private Label usernameLabel;
-    @FXML
-    private Button homeBtn;
-    @FXML
-    private Button logoutBtn;
-
     @FXML
     private TextArea entryContent;
     @FXML
@@ -80,6 +70,7 @@ public class EntryController {
     private AuthManager authManager;
     private AuthFacade authFacade;
     private SceneManager sceneManager;
+    private SessionPropertiesFacade sessionPropertiesFacade;
     private EntryFacade facade;
     private User currentUser;
     private Session currentSession;
@@ -94,13 +85,27 @@ public class EntryController {
         authManager = AuthManager.getInstance();
         authFacade = AuthFacade.getInstance();
         sceneManager = SceneManager.getInstance();
+        sessionPropertiesFacade = SessionPropertiesFacade.getInstance();
         facade = EntryFacade.getInstance();
-        
-        // Initialize navbar with current session
-        initializeNavbar();
         
         if (authManager.isAuthenticated()) {
             currentUser = authManager.getConnectedUser();
+            currentSession = authFacade.getCurrentSession();
+            currentProfile = authFacade.getProfile(currentSession.getUserId());
+            
+            // Load and apply session settings (theme/font size) using Platform.runLater
+            sessionPropertiesFacade.loadSettings(currentUser.getId());
+            javafx.application.Platform.runLater(() -> {
+                try {
+                    javafx.scene.Parent root = (javafx.scene.Parent) ((javafx.scene.control.Control) commentsList).getScene().getRoot();
+                    if (root != null) {
+                        sessionPropertiesFacade.applyTheme(root);
+                    }
+                } catch (Exception e) {
+                    // Root may not be available yet
+                }
+            });
+            
             entryManager = new EntryManager(currentUser);
             
             try {
@@ -136,100 +141,6 @@ public class EntryController {
             
             // Add hover listener to sub directories button
             subDirBtn.setOnMouseEntered(e -> showSubDirectoriesOnHover());
-        }
-    }
-
-    /**
-     * Initializes the navbar with user information
-     */
-    private void initializeNavbar() {
-        currentSession = authFacade.getCurrentSession();
-        if (currentSession != null) {
-            usernameLabel.setText(currentSession.getUsername());
-            currentProfile = authFacade.getProfile(currentSession.getUserId());
-        }
-    }
-
-    /**
-     * Opens profile dialog (similar to HomeController)
-     */
-    @FXML
-    private void openProfileDialog() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fr/opal/profile-dialog.fxml"));
-            DialogPane dialogPane = loader.load();
-
-            TextField profileUsernameField = (TextField) dialogPane.lookup("#usernameField");
-            TextField emailField = (TextField) dialogPane.lookup("#emailField");
-            TextField firstNameField = (TextField) dialogPane.lookup("#firstNameField");
-            TextField lastNameField = (TextField) dialogPane.lookup("#lastNameField");
-
-            profileUsernameField.setText(currentSession.getUsername());
-            if (currentProfile != null) {
-                emailField.setText(currentProfile.getContactInfo());
-                firstNameField.setText(currentProfile.getDisplayName());
-                lastNameField.setText(currentProfile.getBio());
-            }
-
-            Dialog<ButtonType> dialog = new Dialog<>();
-            dialog.setDialogPane(dialogPane);
-            dialog.setTitle("Opal - Profile");
-
-            dialog.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.OK) {
-                    saveProfileChanges(
-                            firstNameField.getText(),
-                            lastNameField.getText(),
-                            emailField.getText()
-                    );
-                }
-            });
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Saves profile changes
-     */
-    private void saveProfileChanges(String firstName, String lastName, String email) {
-        try {
-            if (currentSession != null) {
-                Profile profile = new Profile(currentSession.getUserId(), firstName, lastName, email);
-                authFacade.updateProfile(currentSession.getUserId(), profile);
-                currentProfile = profile;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Handles logout
-     */
-    @FXML
-    private void logout() {
-        if (currentSession != null) {
-            authFacade.logout(currentSession.getId());
-        }
-        try {
-            AuthController.clearMessageLabel();
-            sceneManager.switchTo("/fr/opal/login-view.fxml");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Navigates back to home
-     */
-    @FXML
-    private void onNavigateHome() {
-        try {
-            sceneManager.switchTo("/fr/opal/home.fxml");
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -345,6 +256,11 @@ public class EntryController {
             // Lock comment input and button for readers
             commentInput.setDisable(!isCommenter);
             addCommentBtn.setDisable(!isCommenter);
+            
+            // Lock permission controls - only editors can modify permissions
+            usernameField.setDisable(!isEditor);
+            permissionComboBox.setDisable(!isEditor);
+            addPermissionBtn.setDisable(!isEditor);
         } catch (Exception e) {
             showErrorDialog("Error displaying entry", e.getMessage());
         }
@@ -536,7 +452,7 @@ public class EntryController {
     }
 
     /**
-     * Handles adding a permission to an entry
+     * Handles adding a permission to an entry (EDITOR only)
      */
     @FXML
     public void onAddPermission() {
@@ -546,6 +462,18 @@ public class EntryController {
         
         if (current == null) {
             showErrorDialog("Error", "No entry selected");
+            return;
+        }
+        
+        // Authorization check: only editors can modify permissions
+        try {
+            UserPermission userPerm = current.getUserPermissionWithCascade(currentUser);
+            if (!userPerm.getPermission().canEdit()) {
+                showErrorDialog("Access Denied", "Only Editors can modify entry permissions.");
+                return;
+            }
+        } catch (Exception e) {
+            showErrorDialog("Authorization Error", "Failed to verify your permissions.");
             return;
         }
         

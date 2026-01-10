@@ -170,7 +170,7 @@ public class AuthManager {
      * @return User if found, null otherwise
      */
     public User getUserByUsername(String username) {
-        AbstractUserFactory factory = AbstractUserFactory.getInstance();
+        AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         return factory.createUserDAO().getUserById(username);
     }
 }
