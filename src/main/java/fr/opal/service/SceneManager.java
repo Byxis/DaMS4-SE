@@ -103,6 +103,32 @@ public class SceneManager {
     }
 
     /**
+     * Opens a new window and returns its controller.
+     *
+     * @param fxmlPath The path to the FXML file
+     * @param title The window title
+     * @param width The window width
+     * @param height The window height
+     * @return The controller of the loaded FXML
+     * @throws IOException if the FXML file cannot be loaded
+     */
+    public Object openNewWindowWithController(String fxmlPath, String title, double width, double height) throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+        Parent root = loader.load();
+        sessionPropertiesFacade.applyTheme(root);
+        Scene scene = new Scene(root, width, height);
+        Stage newStage = new Stage();
+        newStage.setTitle(title);
+        newStage.setScene(scene);
+        newStage.setMinWidth(600);
+        newStage.setMinHeight(400);
+        Image icon = new Image(getClass().getResourceAsStream("/fr/opal/opal-icon.png"));
+        newStage.getIcons().add(icon);
+        newStage.show();
+        return loader.getController();
+    }
+
+    /**
      * Loads a scene from an FXML file.
      *
      * @param fxmlPath The path to the FXML file

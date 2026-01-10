@@ -163,4 +163,14 @@ public abstract class FriendsDAO {
      * @param userId The ID of the user accepting the request
      */
     public abstract void acceptFriendRequest(int requesterId, int userId);
+
+    /**
+     * Gets the channel ID for DMs between two friends.
+     * Returns the channel ID for an ACCEPTED friendship, 0 if not found or not ACCEPTED.
+     *
+     * @param user1Id The ID of the first user
+     * @param user2Id The ID of the second user
+     * @return The channel ID for DMs, or 0 if friendship doesn't exist or isn't accepted
+     */
+    public abstract int getChannelIdForFriendship(int user1Id, int user2Id);
 }

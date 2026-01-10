@@ -2,12 +2,14 @@ package fr.opal.service;
 
 import fr.opal.type.Entry;
 import fr.opal.type.User;
-import fr.opal.type.Comment;
+import fr.opal.type.Message;
 import fr.opal.type.UserPermission;
 import fr.opal.type.EPermission;
 import fr.opal.type.EntryContextDTO;
 import fr.opal.dao.EntryDAO;
+import fr.opal.dao.ChannelDAO;
 import fr.opal.factory.AbstractEntryFactory;
+import fr.opal.factory.AbstractDAOFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.List;
  * Contains entry-related business logic and persistence coordination
  * Owns the complexity: CRUD, relationships, permissions, placeholder creation
  * Delegates persistence to DAO
+ * Uses unified channel architecture for messages (comments)
  */
 public class EntryManager {
 
@@ -24,6 +27,7 @@ public class EntryManager {
     private User currentUser;
     private AuthManager authManager;
     private EntryDAO dao;
+    private ChannelDAO channelDAO;
 
     /**
      * Constructor with no parameters
@@ -32,6 +36,7 @@ public class EntryManager {
     public EntryManager() {
         this.authManager = AuthManager.getInstance();
         this.dao = AbstractEntryFactory.getInstance().getEntryDAO();
+        this.channelDAO = AbstractDAOFactory.getFactory().createChannelDAO();
         this.currentEntry = null;
         this.currentUser = null;
     }
@@ -229,14 +234,14 @@ public class EntryManager {
         persistEntry(child);
     }
 
-    // Comment Management
+    // Message Management (unified channel architecture)
 
     /**
-     * Adds a comment to an entry with permission checks
+     * Adds a message to an entry's channel with permission checks
      * Permission: COMMENTOR or EDITOR
-     * Only the comment is persisted (Auto-Save)
+     * Message is persisted immediately via ChannelDAO (Auto-Save)
      */
-    public void addComment(int entryId, Comment comment) throws PermissionException {
+    public void addMessage(int entryId, Message message) throws PermissionException {
         // SECURITY: Verify user has permission to comment
         Entry entry = dao.loadEntryWithDetails(entryId);
         if (entry == null) {
@@ -247,54 +252,85 @@ public class EntryManager {
             throw new PermissionException("You do not have permission to comment on this entry");
         }
         
-        // Add comment and persist only the comment
-        entry.addComment(comment);
-        dao.saveEntry(entry);
+        // Ensure message has correct channel ID
+        message.setChannelId(entry.getChannelId());
+        
+        // Persist message directly to unified channel
+        channelDAO.saveMessage(message);
+        
+        // Update cached messages in entry
+        entry.addMessage(message);
     }
 
     /**
-     * Removes a comment from entry with permission checks
-     * Permission: EDITOR (or comment author)
+     * Removes a message from entry's channel with permission checks
+     * Permission: EDITOR (or message author)
      */
-    public void deleteCommentFromEntry(Entry entry, Comment comment) throws PermissionException {
-        // SECURITY: Only EDITOR can remove comments
+    public void deleteMessage(Entry entry, Message message) throws PermissionException {
+        // SECURITY: Only EDITOR can remove messages
         if (!hasPermission(entry, EPermission.EDITOR)) {
             throw new PermissionException("You do not have permission to delete comments");
         }
         
-        entry.removeComment(comment);
-        persistEntry(entry);
+        // Delete from database
+        channelDAO.deleteMessage(message.getId());
+        
+        // Update cached messages
+        entry.removeMessage(message);
     }
 
     /**
-     * Gets all comments for an entry
+     * Gets all messages for an entry from its channel
      */
-    public List<Comment> getComments(Entry entry) {
-        return entry.getComments();
+    public List<Message> getMessages(Entry entry) {
+        if (entry.getChannelId() > 0) {
+            return channelDAO.getMessagesForChannel(entry.getChannelId());
+        }
+        return entry.getMessages();
     }
 
     // Entry Data & Permission Updates
+
+    /**
+     * Updates entry content (Manual Save)
+     * Scope: Title and Content only
+     * Permission: EDITOR only
+     * SECURITY: READER and COMMENTOR users are strictly blocked
+     */
+    public void updateEntryContent(int entryId, String newTitle, String newContent) throws PermissionException {
+        Entry entry = dao.loadEntryWithDetails(entryId);
+        if (entry == null) {
+            throw new PermissionException("Entry not found");
+        }
+        
+        // Use cascading permission check
+        if (!hasPermission(entry, EPermission.EDITOR)) {
+            throw new PermissionException("You do not have editor permissions for this entry");
+        }
+        
+        // Update entry data
+        entry.setTitle(newTitle);
+        entry.setContent(newContent);
+        
+        // Persist the entry content changes
+        persistEntry(entry);
+    }
 
     /**
      * Updates entry data and permissions (Manual Save)
      * Scope: Title, Content, and Permissions
      * Permission: EDITOR only
      * SECURITY: READER and COMMENTOR users are strictly blocked
+     * @deprecated Use updateEntryContent() and setUserPermission() separately
      */
+    @Deprecated
     public void updateEntry(int entryId, String newTitle, String newContent, List<UserPermission> permissionOverrides) throws PermissionException {
-        // SECURITY: Only EDITOR can modify entry data and permissions
         Entry entry = dao.loadEntryWithDetails(entryId);
         if (entry == null) {
             throw new PermissionException("Entry not found");
         }
         
-        // STRICT CHECK: READER users are absolutely blocked
-        UserPermission userPerm = entry.getPermissionManager().getUserPermission(currentUser);
-        if (userPerm != null && userPerm.getPermission() == EPermission.READER) {
-            throw new PermissionException("Read-only users cannot modify entries");
-        }
-        
-        // STRICT CHECK: Only EDITOR can proceed
+        // Use cascading permission check
         if (!hasPermission(entry, EPermission.EDITOR)) {
             throw new PermissionException("You do not have editor permissions for this entry");
         }
@@ -318,8 +354,14 @@ public class EntryManager {
 
     /**
      * Sets a user's permission on an entry by User object
+     * Permission: EDITOR only - auto-saves immediately
      */
-    public void setUserPermission(Entry entry, User user, EPermission permission) {
+    public void setUserPermission(Entry entry, User user, EPermission permission) throws PermissionException {
+        // SECURITY: Only EDITOR can modify permissions
+        if (!hasPermission(entry, EPermission.EDITOR)) {
+            throw new PermissionException("You do not have editor permissions to modify permissions");
+        }
+        
         UserPermission up = new UserPermission(user, permission);
         entry.getPermissionManager().addUserPermission(up);
         persistEntry(entry);
@@ -327,35 +369,45 @@ public class EntryManager {
 
     /**
      * Sets a user's permission on an entry by username
+     * Permission: EDITOR only - auto-saves immediately
      * Looks up the user by username and applies the permission
      */
-    public void setUserPermissionByUsername(Entry entry, String username, EPermission permission) throws Exception {
+    public void setUserPermissionByUsername(Entry entry, String username, EPermission permission) throws PermissionException {
+        // SECURITY: Only EDITOR can modify permissions
+        if (!hasPermission(entry, EPermission.EDITOR)) {
+            throw new PermissionException("You do not have editor permissions to modify permissions");
+        }
+        
         if (username == null || username.trim().isEmpty()) {
-            throw new Exception("Username cannot be empty");
+            throw new PermissionException("Username cannot be empty");
         }
         if (permission == null) {
-            throw new Exception("Permission cannot be null");
+            throw new PermissionException("Permission cannot be null");
         }
         
         // Look up user by username
         User user = authManager.getUserByUsername(username);
         if (user == null) {
-            throw new Exception("User not found: " + username);
+            throw new PermissionException("User not found: " + username);
         }
         
-        // Set the permission
-        setUserPermission(entry, user, permission);
+        // Set the permission (bypasses redundant permission check since we already verified)
+        UserPermission up = new UserPermission(user, permission);
+        entry.getPermissionManager().addUserPermission(up);
+        persistEntry(entry);
     }
 
     /**
      * Checks if current user has permission on specific entry
+     * Uses cascading permission check - walks up parent chain until permission is found
      */
     private boolean hasPermission(Entry entry, EPermission requiredPermission) {
         if (entry == null || requiredPermission == null) {
             return false;
         }
         
-        UserPermission userPerm = entry.getPermissionManager().getUserPermission(currentUser);
+        // Use cascading permission check - walks up parent chain to permission boundary
+        UserPermission userPerm = entry.getUserPermissionWithCascade(currentUser);
         if (userPerm == null) {
             return false;
         }
@@ -375,117 +427,6 @@ public class EntryManager {
     }
 
     // Placeholder Entry Management
-
-    /**
-     * Initializes a complete placeholder entry structure with all test variations
-     * Creates the structure, persists it to database, and returns it
-     * @param ownerUsername The username of the entry owner (e.g., "lez")
-     * @return The root placeholder entry with full hierarchy
-     */
-    public Entry initializePlaceholderStructure(String ownerUsername) throws Exception {
-        // Load owner user
-        User owner = authManager.getUserByUsername(ownerUsername);
-        if (owner == null) {
-            throw new RuntimeException("Owner user '" + ownerUsername + "' not found");
-        }
-        
-        // Build the structure (pure business logic)
-        Entry placeholderEntry = buildPlaceholderStructure(owner);
-        
-        // Persist the entire structure to database
-        persistEntryStructure(placeholderEntry);
-        
-        return placeholderEntry;
-    }
-
-    /**
-     * Ensures the placeholder entry structure exists in the database
-     * Implements idempotent initialization: load from DB if exists, create if not
-     * @param ownerUsername The username of the entry owner (e.g., "lez")
-     * @return The root entry ID if created/loaded successfully, 0 if operation failed
-     */
-    public int ensurePlaceholderStructureExists(String ownerUsername) throws Exception {
-        // Load owner user
-        User owner = authManager.getUserByUsername(ownerUsername);
-        if (owner == null) {
-            throw new RuntimeException("Owner user '" + ownerUsername + "' not found");
-        }
-        
-        // Try to load existing root entry from database
-        List<Entry> rootEntries = getAllRootEntries();
-        for (Entry entry : rootEntries) {
-            if ("Sample Project".equals(entry.getTitle())) {
-                // Root entry already exists in database - idempotency achieved
-                return entry.getId();
-            }
-        }
-        
-        // Root entry doesn't exist - create it
-        Entry placeholderEntry = buildPlaceholderStructure(owner);
-        persistEntryStructure(placeholderEntry);
-        
-        // Return the ID of the created root entry
-        return placeholderEntry.getId();
-    }
-
-    /**
-     * Fetches the root placeholder entry from the database with Depth-1 context
-     * Always queries DB, never uses in-memory cache
-     * @return EntryContextDTO with root entry and its children, null if not found
-     */
-    public EntryContextDTO fetchPlaceholderRootFromDatabase() {
-        List<Entry> rootEntries = getAllRootEntries();
-        for (Entry entry : rootEntries) {
-            if ("Sample Project".equals(entry.getTitle())) {
-                // Load with full Depth-1 context
-                return getEntry(entry.getId());
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Builds a complete placeholder entry structure with all test variations
-     * This is PURE business logic - builds the structure but does NOT persist
-     * @param owner The owner User object for all entries
-     * @return The root placeholder entry with full hierarchy
-     */
-    public Entry buildPlaceholderStructure(User owner) throws Exception {
-        // Create root entry
-        Entry placeholderEntry = new Entry("Sample Project", "This is a sample project for testing the Entry Management System.", owner);
-
-        // Create nested child entries
-        Entry chapter1 = new Entry("Chapter 1: Introduction", "Introduction to the project and its purpose.", owner);
-        placeholderEntry.addChildEntry(chapter1);
-        
-        Entry section1_1 = new Entry("1.1 Overview", "This section provides an overview of the system architecture.", owner);
-        chapter1.addChildEntry(section1_1);
-        
-        Entry section1_2 = new Entry("1.2 Key Features", "Key features and capabilities of the system.", owner);
-        chapter1.addChildEntry(section1_2);
-        
-        // Entry with NO permissions override
-        Entry chapter2 = new Entry("[NO ACCESS] Chapter 2: Implementation", "Implementation details and technical decisions.", owner);
-        chapter2.removeUserPermissionSparse(owner);  // Explicitly deny
-        placeholderEntry.addChildEntry(chapter2);
-        
-        // Entry with READER only permission override
-        Entry section2_1 = new Entry("[READER ONLY] Architecture", "System architecture and design patterns.", owner);
-        section2_1.removeUserPermissionSparse(owner);  // Remove inherited EDITOR
-        section2_1.addUserPermissionSparse(owner, EPermission.READER);  // Override to READER
-        placeholderEntry.addChildEntry(section2_1);
-        
-        // Entry with COMMENTOR only permission override
-        Entry section2_2 = new Entry("[COMMENTER ONLY] Database Schema", "Database design and relationships.", owner);
-        section2_2.removeUserPermissionSparse(owner);  // Remove inherited EDITOR
-        section2_2.addUserPermissionSparse(owner, EPermission.COMMENTOR);  // Override to COMMENTOR
-        placeholderEntry.addChildEntry(section2_2);
-        
-        Entry chapter3 = new Entry("Chapter 3: Conclusion", "Final thoughts and future improvements.", owner);
-        placeholderEntry.addChildEntry(chapter3);
-        
-        return placeholderEntry;
-    }
 
     /**
      * Gets the current entry

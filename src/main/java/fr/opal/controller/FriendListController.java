@@ -3,6 +3,8 @@ package fr.opal.controller;
 import fr.opal.facade.AuthFacade;
 import fr.opal.facade.FriendsFacade;
 import fr.opal.facade.SessionPropertiesFacade;
+import fr.opal.service.SceneManager;
+import fr.opal.service.AuthManager;
 import fr.opal.type.Session;
 import fr.opal.type.User;
 import javafx.fxml.FXML;
@@ -12,6 +14,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -36,18 +39,24 @@ public class FriendListController {
 
     private FriendsFacade friendsFacade;
     private AuthFacade authFacade;
+    private AuthManager authManager;
     private SessionPropertiesFacade sessionPropertiesFacade;
+    private SceneManager sceneManager;
     private Session currentSession;
+    private User currentUser;
 
     public FriendListController() {
         this.friendsFacade = FriendsFacade.getInstance();
         this.authFacade = AuthFacade.getInstance();
+        this.authManager = AuthManager.getInstance();
         this.sessionPropertiesFacade = SessionPropertiesFacade.getInstance();
+        this.sceneManager = SceneManager.getInstance();
     }
 
     @FXML
     public void initialize() {
         currentSession = authFacade.getCurrentSession();
+        currentUser = authManager.getConnectedUser();
         if (currentSession != null) {
             // Load and apply user theme preferences
             sessionPropertiesFacade.loadSettings(currentSession.getUserId());
@@ -144,13 +153,19 @@ public class FriendListController {
         usernameLabel.getStyleClass().add("title-label");
         HBox.setHgrow(usernameLabel, Priority.ALWAYS);
         
+        Button messageBtn = new Button("Message");
+        messageBtn.getStyleClass().addAll("button", "primary-button");
+        messageBtn.setMinWidth(100);
+        messageBtn.setPrefWidth(100);
+        messageBtn.setOnAction(e -> handleOpenDM(friend));
+        
         Button unfriendBtn = new Button("Unfriend");
         unfriendBtn.getStyleClass().addAll("button", "danger-button");
         unfriendBtn.setMinWidth(100);
         unfriendBtn.setPrefWidth(100);
         unfriendBtn.setOnAction(e -> handleUnfriend(friend.getId()));
         
-        item.getChildren().addAll(usernameLabel, unfriendBtn);
+        item.getChildren().addAll(usernameLabel, messageBtn, unfriendBtn);
         return item;
     }
 
@@ -258,7 +273,6 @@ public class FriendListController {
     private void updateCounts() {
         int userId = currentSession.getUserId();
         int friendCount = friendsFacade.getFriendCount(userId);
-        int followerCount = friendsFacade.getFollowerCount(userId);
         int pendingCount = friendsFacade.getPendingFriendRequests().size();
         
         friendsCountLabel.setText("Friends (" + friendCount + ")");
@@ -300,6 +314,36 @@ public class FriendListController {
             loadFriendsList();
         } else {
             showError("Failed to unblock user");
+        }
+    }
+
+    /**
+     * Handles opening a DM channel with a friend
+     */
+    private void handleOpenDM(User friend) {
+        try {
+            // Get the channel ID for this friendship
+            int channelId = friendsFacade.getChannelIdForFriendship(currentUser.getId(), friend.getId());
+            
+            if (channelId <= 0) {
+                showError("Cannot open DM: Channel not found or friendship not accepted");
+                return;
+            }
+            
+            // Open TextChannelController as a new window and get its controller
+            Object controller = sceneManager.openNewWindowWithController(
+                "/fr/opal/textchannel-view.fxml",
+                "DM with " + friend.getUsername(),
+                600,
+                500
+            );
+            
+            // Initialize the controller with channel and friend info
+            if (controller instanceof fr.opal.controller.TextChannelController) {
+                ((fr.opal.controller.TextChannelController) controller).setChannelAndFriend(channelId, friend);
+            }
+        } catch (IOException e) {
+            showError("Error opening DM: " + e.getMessage());
         }
     }
 }

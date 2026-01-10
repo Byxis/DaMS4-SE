@@ -235,4 +235,15 @@ public class FriendsFacade {
     public boolean hasPendingFriendRequest(int fromUserId, int toUserId) {
         return friendsManager.hasPendingFriendRequest(fromUserId, toUserId);
     }
+
+    /**
+     * Gets the channel ID for DMs between two friends.
+     *
+     * @param user1Id The ID of the first user
+     * @param user2Id The ID of the second user
+     * @return The channel ID for DMs, or 0 if friendship doesn't exist or isn't accepted
+     */
+    public int getChannelIdForFriendship(int user1Id, int user2Id) {
+        return friendsManager.getChannelIdForFriendship(user1Id, user2Id);
+    }
 }

@@ -2,7 +2,7 @@ package fr.opal.facade;
 
 import fr.opal.type.Entry;
 import fr.opal.type.User;
-import fr.opal.type.Comment;
+import fr.opal.type.Message;
 import fr.opal.type.EntryContextDTO;
 import fr.opal.service.EntryManager;
 import java.util.List;
@@ -78,32 +78,32 @@ public class EntryFacade {
     }
 
     /**
-     * Adds a comment to an entry and persists it
-     * Refreshes the entry's comments from database after persistence
+     * Adds a message (comment) to an entry's channel and persists it
+     * Refreshes the entry's messages from database after persistence
      */
-    public void addComment(Entry entry, Comment comment) throws EntryManager.PermissionException {
-        manager.addComment(entry.getId(), comment);
+    public void addMessage(Entry entry, Message message) throws EntryManager.PermissionException {
+        manager.addMessage(entry.getId(), message);
         
-        // Reload the entry with fresh comments from database
+        // Reload the entry with fresh messages from database
         EntryContextDTO refreshedContext = loadEntry(entry.getId());
         if (refreshedContext != null) {
-            entry.getComments().clear();
-            entry.getComments().addAll(refreshedContext.getTargetEntry().getComments());
+            entry.getMessages().clear();
+            entry.getMessages().addAll(refreshedContext.getTargetEntry().getMessages());
         }
     }
 
     /**
-     * Removes a comment from an entry
-     * Refreshes the entry's comments from database after deletion
+     * Removes a message from an entry's channel
+     * Refreshes the entry's messages from database after deletion
      */
-    public void removeComment(Entry entry, Comment comment) throws EntryManager.PermissionException {
-        manager.deleteCommentFromEntry(entry, comment);
+    public void removeMessage(Entry entry, Message message) throws EntryManager.PermissionException {
+        manager.deleteMessage(entry, message);
         
-        // Reload the entry with fresh comments from database
+        // Reload the entry with fresh messages from database
         EntryContextDTO refreshedContext = loadEntry(entry.getId());
         if (refreshedContext != null) {
-            entry.getComments().clear();
-            entry.getComments().addAll(refreshedContext.getTargetEntry().getComments());
+            entry.getMessages().clear();
+            entry.getMessages().addAll(refreshedContext.getTargetEntry().getMessages());
         }
     }
 
@@ -126,32 +126,6 @@ public class EntryFacade {
      */
     public void removeChildEntry(Entry parent, Entry child) {
         manager.detachChildFromParent(parent, child);
-    }
-
-    /**
-     * Creates a complete placeholder entry structure with all test variations
-     * @param ownerUsername The username of the entry owner (e.g., "lez")
-     * @return The root placeholder entry with full hierarchy
-     */
-    public Entry createPlaceholderEntryStructure(String ownerUsername) throws Exception {
-        return manager.initializePlaceholderStructure(ownerUsername);
-    }
-
-    /**
-     * Ensures the placeholder entry structure exists in the database
-     * @param ownerUsername The username of the entry owner (e.g., "lez")
-     * @return The root entry ID if created/loaded successfully, 0 if operation failed
-     */
-    public int ensurePlaceholderEntryExists(String ownerUsername) throws Exception {
-        return manager.ensurePlaceholderStructureExists(ownerUsername);
-    }
-
-    /**
-     * Loads the root placeholder entry from the database with Depth-1 context
-     * @return EntryContextDTO with root entry and its children, null if not found
-     */
-    public EntryContextDTO loadPlaceholderRootFromDatabase() {
-        return manager.fetchPlaceholderRootFromDatabase();
     }
 }
 

@@ -44,7 +44,7 @@ public class EntryController {
 
     // Additional UI components for entry management
     @FXML
-    private ListView<Comment> commentsList;
+    private ListView<Message> commentsList;
     @FXML
     private TextArea commentInput;
     @FXML
@@ -73,6 +73,7 @@ public class EntryController {
     private SessionPropertiesFacade sessionPropertiesFacade;
     private EntryFacade facade;
     private User currentUser;
+    private ContextMenu childrenContextMenu;
     private Session currentSession;
     private Profile currentProfile;
 
@@ -109,30 +110,32 @@ public class EntryController {
             entryManager = new EntryManager(currentUser);
             
             try {
-                // Get the Facade to handle database initialization
-                // (facade field is already initialized above)
+                // Load the root "Sample Project" entry from DATABASE with Depth-1 context
+                // The mock entry hierarchy is created by DatabaseInitializer at startup
+                List<Entry> rootEntries = entryManager.getAllRootEntries();
+                Entry rootEntry = null;
                 
-                // Ensure placeholder entry structure exists in database (idempotent)
-                // This creates it if it doesn't exist, but we DON'T use the returned ID for anything
-                facade.ensurePlaceholderEntryExists("lez");
+                for (Entry entry : rootEntries) {
+                    if ("Sample Project".equals(entry.getTitle())) {
+                        rootEntry = entry;
+                        break;
+                    }
+                }
                 
-                // Load the root entry from DATABASE with Depth-1 context
-                EntryContextDTO rootContext = facade.loadPlaceholderRootFromDatabase();
-                
-                if (rootContext != null) {
-                    Entry rootEntry = rootContext.getTargetEntry();
-                    // Set current entry to the database-loaded entry
-                    entryManager.setCurrentEntry(rootEntry);
-                    displayEntry(rootEntry);
+                if (rootEntry != null) {
+                    // Load with full context and permissions
+                    EntryContextDTO rootContext = entryManager.getEntry(rootEntry.getId());
+                    entryManager.setCurrentEntry(rootContext.getTargetEntry());
+                    displayEntry(rootContext.getTargetEntry());
                     
                     // Update navigation buttons based on context
                     entryParentRedirBtn.setDisable(rootContext.isRoot());
                     subDirBtn.setDisable(!rootContext.hasChildren());
                 } else {
-                    showErrorDialog("Error", "Failed to load placeholder entry from database");
+                    showErrorDialog("Error", "Sample Project entry not found - ensure database is initialized");
                 }
             } catch (Exception e) {
-                showErrorDialog("Error", "Failed to initialize entry system: " + e.getMessage());
+                showErrorDialog("Error", "Failed to load entry system: " + e.getMessage());
             }
             
             // Initialize permission ComboBox
@@ -160,17 +163,17 @@ public class EntryController {
                 return;
             }
             
-            ContextMenu contextMenu = new ContextMenu();
+            childrenContextMenu = new ContextMenu();
             for (Entry child : context.getChildEntries()) {
                 MenuItem menuItem = new MenuItem(child.getTitle());
                 menuItem.setOnAction(e -> {
                     // Reload child from database with full Depth-1 context
                     loadAndDisplayEntry(child.getId());
                 });
-                contextMenu.getItems().add(menuItem);
+                childrenContextMenu.getItems().add(menuItem);
             }
             
-            contextMenu.show(subDirBtn, javafx.geometry.Side.BOTTOM, 0, 0);
+            childrenContextMenu.show(subDirBtn, javafx.geometry.Side.BOTTOM, 0, 0);
         } catch (Exception e) {
             showErrorDialog("Error loading children", e.getMessage());
         }
@@ -219,6 +222,11 @@ public class EntryController {
      * Displays an entry's content with optional navigation context
      */
     private void displayEntry(Entry entry, EntryContextDTO context) {
+        // Collapse children menu when loading a new entry
+        if (childrenContextMenu != null && childrenContextMenu.isShowing()) {
+            childrenContextMenu.hide();
+        }
+        
         try {
             // Check if user has access to this entry using "deny by default" logic
             if (!entry.canUserAccess(currentUser)) {
@@ -267,26 +275,26 @@ public class EntryController {
     }
 
     /**
-     * Displays comments for an entry
+     * Displays comments (messages) for an entry from its unified channel
      */
     private void displayComments(Entry entry) {
         commentsList.getItems().clear();
-        commentsList.setCellFactory(param -> new ListCell<Comment>() {
+        commentsList.setCellFactory(param -> new ListCell<Message>() {
             @Override
-            protected void updateItem(Comment comment, boolean empty) {
-                super.updateItem(comment, empty);
-                if (empty || comment == null) {
+            protected void updateItem(Message message, boolean empty) {
+                super.updateItem(message, empty);
+                if (empty || message == null) {
                     setText(null);
                     setWrapText(false);
                 } else {
-                    setText(comment.toString());
+                    setText(message.toString());
                     setWrapText(true);
                 }
             }
         });
-        List<Comment> comments = entry.getComments();
-        for (Comment comment : comments) {
-            commentsList.getItems().add(comment);
+        List<Message> messages = entry.getMessages();
+        for (Message message : messages) {
+            commentsList.getItems().add(message);
         }
     }
 
@@ -330,8 +338,9 @@ public class EntryController {
     }
 
     /**
-     * Handles saving the current entry data and permissions (Manual Save)
-     * EDITOR only - COMMENTOR and READER users are blocked
+     * Handles saving the current entry content (Manual Save)
+     * Scope: Title and Content only
+     * Permission: EDITOR only - COMMENTOR and READER users are blocked
      */
     @FXML
     public void onSaveEntry() {
@@ -345,9 +354,8 @@ public class EntryController {
             String newTitle = entryTitleField.getText();
             String newContent = entryContent.getText();
             
-            // Call the new updateEntry method with permission checks
-            // This will throw PermissionException if user is not EDITOR
-            entryManager.updateEntry(current.getId(), newTitle, newContent, null);
+            // Use the separated updateEntryContent method (EDITOR only)
+            entryManager.updateEntryContent(current.getId(), newTitle, newContent);
             
             showInfoDialog("Success", "Entry saved successfully");
             
@@ -433,12 +441,12 @@ public class EntryController {
         }
         
         try {
-            // Create comment with current user as author
-            Comment comment = new Comment(commentText, currentUser);
+            // Create message for the entry's channel
+            Message message = new Message(current.getChannelId(), currentUser, commentText);
             
-            // Call the new addComment method with permission checks (Auto-Save)
+            // Call the new addMessage method with permission checks (Auto-Save)
             // This will throw PermissionException if user is not COMMENTOR or EDITOR
-            entryManager.addComment(current.getId(), comment);
+            entryManager.addMessage(current.getId(), message);
             
             // Clear input and refresh display
             commentInput.clear();
@@ -452,7 +460,9 @@ public class EntryController {
     }
 
     /**
-     * Handles adding a permission to an entry (EDITOR only)
+     * Handles adding a permission to an entry (Auto-Save)
+     * Scope: Permissions only
+     * Permission: EDITOR only - auto-saves immediately
      */
     @FXML
     public void onAddPermission() {
@@ -462,18 +472,6 @@ public class EntryController {
         
         if (current == null) {
             showErrorDialog("Error", "No entry selected");
-            return;
-        }
-        
-        // Authorization check: only editors can modify permissions
-        try {
-            UserPermission userPerm = current.getUserPermissionWithCascade(currentUser);
-            if (!userPerm.getPermission().canEdit()) {
-                showErrorDialog("Access Denied", "Only Editors can modify entry permissions.");
-                return;
-            }
-        } catch (Exception e) {
-            showErrorDialog("Authorization Error", "Failed to verify your permissions.");
             return;
         }
         
@@ -488,6 +486,7 @@ public class EntryController {
         }
         
         try {
+            // Permission check is now inside setUserPermissionByUsername (EDITOR only)
             entryManager.setUserPermissionByUsername(current, username, permission);
             usernameField.clear();
             permissionComboBox.setValue(EPermission.READER);

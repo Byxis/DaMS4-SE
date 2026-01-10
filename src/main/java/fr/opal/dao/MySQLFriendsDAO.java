@@ -376,15 +376,64 @@ public class MySQLFriendsDAO extends FriendsDAO {
 
     @Override
     public void acceptFriendRequest(int requesterId, int userId) {
-        String query = "UPDATE friendships SET status = 'ACCEPTED', updated_at = CURRENT_TIMESTAMP " +
+        // First, create a channel for the DM conversation
+        int channelId = createChannelForFriendship();
+        
+        // Then update the friendship status and assign the channel
+        String query = "UPDATE friendships SET status = 'ACCEPTED', channel_id = ?, updated_at = CURRENT_TIMESTAMP " +
                       "WHERE user_id1 = ? AND user_id2 = ? AND status = 'PENDING'";
         
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setInt(1, requesterId);
-            stmt.setInt(2, userId);
+            stmt.setInt(1, channelId);
+            stmt.setInt(2, requesterId);
+            stmt.setInt(3, userId);
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Error accepting friend request from " + requesterId + " to " + userId, e);
         }
+    }
+
+    /**
+     * Creates a new channel for a friendship DM conversation.
+     */
+    private int createChannelForFriendship() {
+        String sql = "INSERT INTO channels() VALUES()";
+        try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error creating channel for friendship", e);
+        }
+        return 0;
+    }
+
+    @Override
+    public int getChannelIdForFriendship(int user1Id, int user2Id) {
+        String query = "SELECT channel_id FROM friendships " +
+                      "WHERE ((user_id1 = ? AND user_id2 = ?) OR (user_id1 = ? AND user_id2 = ?)) " +
+                      "AND status = 'ACCEPTED'";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, user1Id);
+            stmt.setInt(2, user2Id);
+            stmt.setInt(3, user2Id);
+            stmt.setInt(4, user1Id);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    int channelId = rs.getInt("channel_id");
+                    if (!rs.wasNull()) {
+                        return channelId;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error getting channel ID for friendship between " + user1Id + " and " + user2Id, e);
+        }
+        return 0; // Channel doesn't exist or friendship not accepted
     }
 }

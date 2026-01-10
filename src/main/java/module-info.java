@@ -2,7 +2,7 @@ module fr.opal {
     requires javafx.controls;
     requires transitive javafx.graphics;
     requires javafx.fxml;
-    requires java.sql;
+    requires transitive java.sql;
 
     opens fr.opal.UI to javafx.fxml;
     opens fr.opal.UI.login to javafx.fxml;
