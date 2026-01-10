@@ -5,10 +5,7 @@ import fr.opal.facade.SessionPropertiesFacade;
 import fr.opal.service.SceneManager;
 import fr.opal.type.Profile;
 import fr.opal.type.Session;
-import fr.opal.util.ColorUtil;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 
@@ -58,41 +55,14 @@ public class HomeController {
                 welcomeText = "Welcome, " + currentProfile.getDisplayName() + "!";
             }
             welcomeLabel.setText(welcomeText);
-
-            applyCurrentTheme();
         } else {
             redirectToLogin();
         }
     }
 
-    /**
-     * Apply current theme to the root pane
-     */
-    private void applyCurrentTheme() {
-        if (rootPane != null) {
-            sessionPropertiesFacade.applyTheme(rootPane);
-
-            String accentColor = sessionPropertiesFacade.getSettings().getAccentColor().getHexCode();
-            String textColor = ColorUtil.getContrastTextColor(accentColor);
-            
-            String buttonStyle = "-fx-background-color: " + accentColor + "; " +
-                                "-fx-text-fill: " + textColor + "; " +
-                                "-fx-font-weight: bold;";
-            
-            if (userProfileBtn != null) {
-                userProfileBtn.setStyle(buttonStyle);
-            }
-            if (settingsBtn != null) {
-                settingsBtn.setStyle(buttonStyle);
-            }
-            if (logoutBtn != null) {
-                logoutBtn.setStyle(buttonStyle);
-            }
-        }
-    }
 
     /**
-     * Opens a dialog to view and edit user profile
+     * Opens the profile editing dialog
      */
     @FXML
     private void openProfileDialog() {
@@ -151,7 +121,7 @@ public class HomeController {
      */
     @FXML
     private void openSettings() {
-        sceneManager.openSettingsDialog(currentSession, sessionPropertiesFacade, this::applyCurrentTheme);
+        sceneManager.openSettingsDialog(currentSession, sessionPropertiesFacade, () -> {});
     }
 
     /**

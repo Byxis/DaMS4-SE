@@ -9,48 +9,55 @@
 
 <AnchorPane fx:id="rootPane" prefHeight="600.0" prefWidth="800.0" styleClass="main-container" stylesheets="@style.css, @home.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.HomeController">
    <children>
-      <HBox alignment="CENTER_LEFT" prefHeight="80.0" prefWidth="800.0" styleClass="header-bar">
+      <!-- Navbar (Full Width Background, Centered Content) -->
+      <HBox alignment="CENTER" prefHeight="80.0" styleClass="header-bar" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <HBox alignment="CENTER_LEFT" onMouseClicked="#openProfileDialog" spacing="15.0" style="-fx-cursor: hand;">
+            <HBox alignment="CENTER_LEFT" maxWidth="1200.0" HBox.hgrow="ALWAYS">
                <children>
-                  <Button fx:id="userProfileBtn" mnemonicParsing="false" styleClass="profile-button" text="👤" />
-                  <VBox alignment="CENTER_LEFT">
+                  <HBox alignment="CENTER_LEFT" onMouseClicked="#openProfileDialog" spacing="15.0" styleClass="profile-container">
                      <children>
-                        <Label fx:id="usernameLabel" styleClass="title-label" text="Username" />
-                        <Label styleClass="muted-label" text="View Profile" />
+                        <Button fx:id="userProfileBtn" mnemonicParsing="false" mouseTransparent="true" styleClass="profile-button" text="👤" />
+                        <VBox alignment="CENTER_LEFT">
+                           <children>
+                              <Label fx:id="usernameLabel" styleClass="title-label" text="Username" />
+                              <Label styleClass="muted-label" text="View Profile" />
+                           </children>
+                        </VBox>
                      </children>
-                  </VBox>
+                  </HBox>
+
+                  <HBox HBox.hgrow="ALWAYS" />
+
+                  <Button fx:id="settingsBtn" mnemonicParsing="false" onAction="#openSettings" styleClass="navbar-button" text="⚙" />
+                  <Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#logout" styleClass="navbar-button" text="🚪" />
                </children>
             </HBox>
-
-            <HBox HBox.hgrow="ALWAYS" />
-
-            <Button fx:id="settingsBtn" mnemonicParsing="false" onAction="#openSettings" styleClass="navbar-button" text="⚙" />
-            <Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#logout" styleClass="navbar-button" text="🚪" />
          </children>
       </HBox>
 
-      <VBox layoutY="80.0" prefHeight="520.0" prefWidth="800.0" spacing="20.0" style="-fx-padding: 20;">
+      <!-- Main Content (Centered Container) -->
+      <VBox alignment="TOP_CENTER" spacing="20.0" style="-fx-padding: 20;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="80.0">
          <children>
-            <Label styleClass="title-large" text="Welcome" />
-            <Label fx:id="welcomeLabel" styleClass="subtitle-label" text="You are successfully logged in to Opal." textAlignment="CENTER" wrapText="true" />
-            
-            <!-- Friends Section -->
-            <VBox spacing="10.0" style="-fx-padding: 20 0 0 0;">
+            <VBox maxWidth="1200.0" spacing="20.0" VBox.vgrow="ALWAYS">
                <children>
-                  <Label styleClass="section-title" text="Friends &amp; Connections" />
-                  <HBox spacing="10.0">
+                  <Label styleClass="title-large" text="Welcome" />
+                  <Label fx:id="welcomeLabel" styleClass="subtitle-label" text="You are successfully logged in to Opal." textAlignment="CENTER" wrapText="true" />
+                  
+                  <!-- Friends Section -->
+                  <VBox spacing="10.0" style="-fx-padding: 20 0 0 0;">
                      <children>
-                        <Button mnemonicParsing="false" onAction="#openFriendsList" styleClass="button, primary-button" text="View Friends" />
-                        <Button mnemonicParsing="false" onAction="#openFriendSearch" styleClass="button, secondary-button" text="Find Friends" />
+                        <Label styleClass="section-title" text="Friends &amp; Connections" />
+                        <HBox spacing="10.0">
+                           <children>
+                              <Button mnemonicParsing="false" onAction="#openFriendsList" styleClass="button, primary-button" text="View Friends" />
+                              <Button mnemonicParsing="false" onAction="#openFriendSearch" styleClass="button, secondary-button" text="Find Friends" />
+                           </children>
+                        </HBox>
                      </children>
-                  </HBox>
+                  </VBox>
                </children>
             </VBox>
          </children>
-         <opaqueInsets>
-            <Insets />
-         </opaqueInsets>
       </VBox>
    </children>
 </AnchorPane>

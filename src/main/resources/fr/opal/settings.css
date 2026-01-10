@@ -11,6 +11,7 @@
     -fx-text-fill: -fx-theme-text;
 }
 
+/* Radio buttons inherit -fx-accent from root */
 .theme-radio .radio {
     -fx-background-color: -fx-theme-input-bg;
     -fx-border-color: -fx-theme-input-border;

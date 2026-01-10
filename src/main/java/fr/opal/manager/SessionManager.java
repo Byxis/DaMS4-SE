@@ -138,19 +138,26 @@ public class SessionManager {
     public void applyTheme(Parent root) {
         if (root == null) return;
 
-        // Remove existing theme classes
         root.getStyleClass().removeAll("light", "dark");
         
-        // Add current palette class
         String paletteClass = userSessionSettings.getStylePalette().getCssClass();
         root.getStyleClass().add(paletteClass);
 
-        // Apply accent color as CSS variable via inline style
         String accentColor = userSessionSettings.getAccentColor().getHexCode();
         String currentStyle = root.getStyle() != null ? root.getStyle() : "";
-        // Remove old accent color if present
-        currentStyle = currentStyle.replaceAll("-fx-accent-color:\\s*#[0-9A-Fa-f]+;?", "");
-        root.setStyle(currentStyle + "-fx-accent-color: " + accentColor + ";");
+        
+        currentStyle = currentStyle.replaceAll("-fx-accent-color:\\s*#[0-9A-Fa-f]+;?", "")
+                                   .replaceAll("-fx-accent:\\s*#[0-9A-Fa-f]+;?", "")
+                                   .replaceAll("-fx-focus-color:\\s*#[0-9A-Fa-f]+;?", "")
+                                   .replaceAll("-fx-faint-focus-color:\\s*#[0-9A-Fa-f]+;?", "");
+                                   
+        String newStyle = currentStyle + 
+                          "-fx-accent-color: " + accentColor + "; " +
+                          "-fx-accent: " + accentColor + "; " +
+                          "-fx-focus-color: " + accentColor + "; " +
+                          "-fx-faint-focus-color: transparent;";
+                          
+        root.setStyle(newStyle);
     }
 
     /**

@@ -6,6 +6,7 @@ import fr.opal.type.CachedScene;
 import fr.opal.type.Profile;
 import fr.opal.type.Session;
 import fr.opal.util.ColorUtil;
+import fr.opal.util.StageHelper;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -26,8 +27,11 @@ public class SceneManager {
 
     private Stage primaryStage;
     private final Map<String, CachedScene> cache = new HashMap<>();
+    private final SessionPropertiesFacade sessionPropertiesFacade = SessionPropertiesFacade.getInstance();
 
-    private SceneManager() {}
+    private SceneManager() {
+        SessionPropertiesController.addGlobalSettingsListener(this::refreshCurrentTheme);
+    }
 
     /**
      * Get singleton instance
@@ -61,19 +65,15 @@ public class SceneManager {
         if (cached == null) {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
-            
+            sessionPropertiesFacade.applyTheme(root);
             double width = root.prefWidth(-1);
             double height = root.prefHeight(-1);
-            
             if (width <= 0) width = 600;
             if (height <= 0) height = 400;
-            
             Scene scene = new Scene(root, width, height);
-
             cached = new CachedScene(scene, loader.getController());
             cache.put(fxmlPath, cached);
         }
-
         primaryStage.setScene(cached.getScene());
         primaryStage.sizeToScene();
     }
@@ -90,17 +90,15 @@ public class SceneManager {
     public void openNewWindow(String fxmlPath, String title, double width, double height) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
         Parent root = loader.load();
-        
+        sessionPropertiesFacade.applyTheme(root);
         Scene scene = new Scene(root, width, height);
         Stage newStage = new Stage();
         newStage.setTitle(title);
         newStage.setScene(scene);
         newStage.setMinWidth(600);
         newStage.setMinHeight(400);
-
         Image icon = new Image(getClass().getResourceAsStream("/fr/opal/opal-icon.png"));
         newStage.getIcons().add(icon);
-
         newStage.show();
     }
 
@@ -114,15 +112,17 @@ public class SceneManager {
     public Scene loadScene(String fxmlPath) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
         Parent root = loader.load();
-        
+        sessionPropertiesFacade.applyTheme(root);
         double width = root.prefWidth(-1);
         double height = root.prefHeight(-1);
-        
         if (width <= 0) width = 600;
         if (height <= 0) height = 400;
-        
         return new Scene(root, width, height);
     }
+
+    /**
+     * Ouvre la boîte de dialogue de profil utilisateur et transmet les valeurs saisies au callback onProfileSaved.
+     */
     public void openProfileDialog(Session currentSession, Profile currentProfile, SessionPropertiesFacade sessionPropertiesFacade, ProfileDialogCallback onProfileSaved) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fr/opal/profile-dialog.fxml"));
@@ -161,10 +161,16 @@ public class SceneManager {
         }
     }
 
+    /**
+     * Interface de callback pour la récupération des valeurs du profil.
+     */
     public interface ProfileDialogCallback {
         void onProfileSaved(String displayName, String bio, String email);
     }
 
+    /**
+     * Ouvre la boîte de dialogue des paramètres d'apparence.
+     */
     public void openSettingsDialog(Session currentSession, SessionPropertiesFacade sessionPropertiesFacade, Runnable onSettingsChanged) {
         try {
             if (currentSession != null) {
@@ -180,43 +186,37 @@ public class SceneManager {
             dialog.setTitle("Appearance Settings");
 
             dialog.getDialogPane().getStylesheets().add(getClass().getResource("/fr/opal/style.css").toExternalForm());
+            dialog.getDialogPane().getStylesheets().add(getClass().getResource("/fr/opal/settings.css").toExternalForm());
             sessionPropertiesFacade.applyTheme(dialog.getDialogPane());
             dialog.getDialogPane().setContent(settingsContent);
             sessionPropertiesFacade.applyTheme(settingsContent);
 
             dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
 
-            Runnable updateCloseButtonColor = () -> {
-                String accentColor = sessionPropertiesFacade.getSettings().getAccentColor().getHexCode();
-                String textColor = ColorUtil.getContrastTextColor(accentColor);
-                javafx.application.Platform.runLater(() -> {
-                    dialog.getDialogPane().lookupAll(".button").forEach(node -> {
-                        if (node instanceof Button) {
-                            Button btn = (Button) node;
-                            if (!btn.getStyleClass().contains("color-button")) {
-                                btn.setStyle(
-                                    "-fx-background-color: " + accentColor + "; " +
-                                    "-fx-text-fill: " + textColor + "; " +
-                                    "-fx-font-weight: bold; " +
-                                    "-fx-padding: 8px 16px;"
-                                );
-                            }
-                        }
-                    });
-                });
-            };
-
             settingsController.initialize();
-            updateCloseButtonColor.run();
 
             settingsController.setOnSettingsChanged(() -> {
                 if (onSettingsChanged != null) onSettingsChanged.run();
-                updateCloseButtonColor.run();
             });
 
             dialog.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Reapplies the current theme to all open stages.
+     */
+    private void refreshCurrentTheme() {
+        if (primaryStage != null && primaryStage.getScene() != null) {
+            sessionPropertiesFacade.applyTheme(primaryStage.getScene().getRoot());
+        }
+
+        for (Stage stage : StageHelper.getStages()) {
+            if (stage.getScene() != null) {
+                sessionPropertiesFacade.applyTheme(stage.getScene().getRoot());
+            }
         }
     }
 }

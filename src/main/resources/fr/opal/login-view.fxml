@@ -12,28 +12,28 @@
 <?import javafx.scene.layout.StackPane?>
 <StackPane fx:id="rootPane" prefHeight="400.0" prefWidth="600.0" stylesheets="@style.css, @auth.css" styleClass="main-container" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.AuthController">
    <children>
-      <VBox alignment="CENTER" layoutX="186.0" layoutY="58.0" prefHeight="283.0" prefWidth="228.0" spacing="10">
+      <VBox alignment="CENTER" maxWidth="350.0" prefWidth="350.0" spacing="20">
          <children>
             <Label styleClass="title-large" text="Login"/>
-            <Hyperlink onAction="#goToRegister" prefHeight="24.0" prefWidth="150.0" text="Create an account" textAlignment="CENTER">
+            <Hyperlink onAction="#goToRegister" text="Create an account" textAlignment="CENTER">
                <graphic>
                   <Label text="New ?" />
                </graphic>
             </Hyperlink>
-            <VBox prefWidth="228.0" spacing="5">
+            <VBox spacing="5" alignment="CENTER_LEFT">
                <children>
-                  <Label alignment="TOP_LEFT" text="Username *" />
-                  <TextField fx:id="usernameField" prefHeight="34.0" prefWidth="228.0" promptText="Username" />
+                  <Label text="Username *" />
+                  <TextField fx:id="usernameField" prefHeight="40.0" promptText="Username" />
                </children>
             </VBox>
-            <VBox prefWidth="228.0" spacing="5">
+            <VBox spacing="5" alignment="CENTER_LEFT">
                <children>
-                  <Label alignment="TOP_LEFT" text="Password *" />
-                  <PasswordField fx:id="passwordField" prefHeight="33.0" prefWidth="228.0" promptText="Password" />
+                  <Label text="Password *" />
+                  <PasswordField fx:id="passwordField" prefHeight="40.0" promptText="Password" />
                </children>
             </VBox>
             <Label fx:id="messageLabel" text="" wrapText="true" />
-            <Button mnemonicParsing="false" onAction="#submitLogin" prefHeight="40.0" prefWidth="228.0" styleClass="primary-button" text="Login" />
+            <Button mnemonicParsing="false" onAction="#submitLogin" prefHeight="45.0" maxWidth="Infinity" styleClass="primary-button" text="Login" />
          </children>
       </VBox>
    </children>
