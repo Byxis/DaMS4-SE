@@ -1,4 +1,4 @@
-![](src/main/resources/banner_polytech_do.png)
+![](src/main/resources/banner_polytech_dams.png)
 
 # Opal - Software Engineering Project
 
