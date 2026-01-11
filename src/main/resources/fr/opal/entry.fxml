@@ -18,7 +18,7 @@
    <center>
       <SplitPane dividerPositions="0.7" prefHeight="720.0" prefWidth="1200.0" styleClass="entry-split-pane">
          <!-- LEFT COLUMN: Entry Content (70%) -->
-         <VBox prefHeight="720.0" prefWidth="840.0" spacing="10.0" style="-fx-padding: 20;" styleClass="entry-left-column">
+         <VBox prefHeight="720.0" prefWidth="840.0" spacing="10.0" styleClass="entry-left-column">
             <!-- Project Title Header -->
             <HBox alignment="CENTER_LEFT" prefHeight="40.0" spacing="15.0" styleClass="entry-header">
                <children>

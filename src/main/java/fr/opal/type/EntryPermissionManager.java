@@ -56,6 +56,14 @@ public class EntryPermissionManager {
     }
 
     /**
+     * Checks if this entry has any permissions defined at all.
+     * Used to determine if this entry is a "permission boundary" for cascading.
+     */
+    public boolean hasAnyPermissions() {
+        return !userPermissions.isEmpty();
+    }
+
+    /**
      * Checks if a user can view the entry
      */
     public boolean canView(User user) {

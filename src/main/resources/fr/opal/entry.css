@@ -3,32 +3,32 @@
    Extends the base theme from style.css
    ======================================== */
 
-/* Main container */
+/* Main container - inherit theme */
 .main-container {
     -fx-background-color: -fx-theme-bg;
 }
 
-/* Split pane styling */
+/* ========================================
+   SPLIT PANE
+   ======================================== */
+
 .entry-split-pane {
     -fx-background-color: -fx-theme-bg;
     -fx-padding: 0;
 }
 
-.entry-split-pane:vertical > .split-pane-divider {
+.entry-split-pane > .split-pane-divider {
     -fx-background-color: -fx-theme-border;
-    -fx-padding: 0 1 0 1;
+    -fx-padding: 0 2 0 2;
 }
 
-/* Left column */
+/* ========================================
+   LEFT COLUMN - Entry Content
+   ======================================== */
+
 .entry-left-column {
     -fx-background-color: -fx-theme-bg;
-}
-
-/* Right column */
-.entry-right-column {
-    -fx-background-color: -fx-theme-bg;
-    -fx-border-color: -fx-theme-border;
-    -fx-border-width: 0 0 0 1;
+    -fx-padding: 20;
 }
 
 /* Header section */
@@ -36,12 +36,13 @@
     -fx-background-color: -fx-theme-bg-secondary;
     -fx-border-color: -fx-theme-border;
     -fx-border-width: 0 0 1 0;
-    -fx-padding: 0 10;
+    -fx-padding: 10 15;
+    -fx-background-radius: 8 8 0 0;
 }
 
 .entry-header-title {
     -fx-text-fill: -fx-theme-text;
-    -fx-font-size: 18;
+    -fx-font-size: 18px;
     -fx-font-weight: bold;
 }
 
@@ -50,71 +51,18 @@
     -fx-background-color: -fx-theme-bg-secondary;
     -fx-border-color: -fx-theme-border;
     -fx-border-width: 1 0 0 0;
-    -fx-padding: 10;
+    -fx-padding: 10 15;
+    -fx-background-radius: 0 0 8 8;
 }
 
-/* Labels */
-.entry-label {
-    -fx-text-fill: -fx-theme-text;
-    -fx-font-weight: bold;
-    -fx-font-size: 12;
-}
+/* ========================================
+   RIGHT COLUMN - Permissions & Comments
+   ======================================== */
 
-.section-header {
-    -fx-text-fill: -fx-theme-text;
-    -fx-font-weight: bold;
-    -fx-font-size: 14;
-}
-
-/* Text fields */
-.entry-text-field {
-    -fx-background-color: -fx-theme-input-bg;
-    -fx-text-fill: -fx-theme-text;
-    -fx-border-color: -fx-theme-input-border;
-    -fx-border-width: 1;
-    -fx-border-radius: 4;
-    -fx-padding: 8;
-    -fx-focus-color: transparent;
-    -fx-faint-focus-color: transparent;
-}
-
-.entry-text-field:focused {
-    -fx-border-color: -fx-accent-color;
-    -fx-background-color: -fx-theme-input-bg;
-    -fx-border-width: 2;
-}
-
-.entry-text-field:hover {
-    -fx-border-color: -fx-theme-input-border;
-}
-
-/* Text area */
-.entry-textarea {
-    -fx-control-inner-background: -fx-theme-input-bg;
-    -fx-text-fill: -fx-theme-text;
-    -fx-font-family: "Consolas", "Monaco", monospace;
-    -fx-font-size: 13;
-    -fx-padding: 8;
-    -fx-border-color: -fx-theme-input-border;
-    -fx-border-radius: 4;
-}
-
-.entry-textarea:focused {
-    -fx-control-inner-background: -fx-theme-input-bg;
-    -fx-border-color: -fx-accent-color;
-}
-
-/* List views */
-.entry-list-view {
-    -fx-background-color: -fx-theme-input-bg;
-    -fx-control-inner-background: -fx-theme-input-bg;
-    -fx-border-color: -fx-theme-input-border;
-    -fx-border-radius: 4;
-}
-
-/* Separator */
-.entry-separator {
+.entry-right-column {
+    -fx-background-color: -fx-theme-bg;
     -fx-border-color: -fx-theme-border;
+    -fx-border-width: 0 0 0 1;
 }
 
 /* Permissions section */
@@ -131,58 +79,297 @@
     -fx-background-color: -fx-theme-bg;
 }
 
-/* ComboBox styling */
-.permission-combo-box {
+/* ========================================
+   LABELS
+   ======================================== */
+
+.entry-label {
+    -fx-text-fill: -fx-theme-text;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+.section-header {
+    -fx-text-fill: -fx-theme-text;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-padding: 0 0 5 0;
+}
+
+/* ========================================
+   TEXT FIELDS
+   ======================================== */
+
+.entry-text-field {
     -fx-background-color: -fx-theme-input-bg;
+    -fx-text-fill: -fx-theme-text;
+    -fx-prompt-text-fill: -fx-theme-text-muted;
     -fx-border-color: -fx-theme-input-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-background-insets: 0;
+    -fx-padding: 10;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.entry-text-field:focused {
+    -fx-border-color: -fx-accent-color;
+    -fx-border-width: 2;
+    -fx-background-insets: 0;
+}
+
+.entry-text-field:hover {
+    -fx-border-color: -fx-theme-text-muted;
+}
+
+/* ========================================
+   TEXT AREA
+   ======================================== */
+
+.entry-textarea {
+    -fx-background-color: -fx-theme-input-bg;
+    -fx-control-inner-background: -fx-theme-input-bg;
+    -fx-text-fill: -fx-theme-text;
+    -fx-font-family: "Consolas", "Monaco", monospace;
+    -fx-font-size: 13px;
+    -fx-border-color: -fx-theme-input-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-background-insets: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.entry-textarea .content {
+    -fx-background-color: -fx-theme-input-bg;
+    -fx-padding: 10;
+}
+
+.entry-textarea:focused {
+    -fx-border-color: -fx-accent-color;
+    -fx-border-width: 2;
+}
+
+.entry-textarea .scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.entry-textarea .scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+/* ========================================
+   LIST VIEWS
+   ======================================== */
+
+.entry-list-view {
+    -fx-background-color: -fx-theme-input-bg;
+    -fx-background-insets: 0;
+    -fx-border-color: -fx-theme-input-border;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 0;
+}
+
+.entry-list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -fx-theme-text;
+    -fx-padding: 8 10;
+}
+
+.entry-list-view .list-cell:filled:selected {
+    -fx-background-color: derive(-fx-accent-color, 60%);
     -fx-text-fill: -fx-theme-text;
 }
 
-.permission-combo-box-popup {
+.dark .entry-list-view .list-cell:filled:selected {
+    -fx-background-color: derive(-fx-accent-color, -30%);
+}
+
+.entry-list-view .list-cell:filled:hover {
+    -fx-background-color: -fx-theme-bg-secondary;
+}
+
+.entry-list-view .virtual-flow .scroll-bar {
+    -fx-background-color: transparent;
+}
+
+/* ========================================
+   SEPARATOR
+   ======================================== */
+
+.entry-separator {
+    -fx-border-color: -fx-theme-border;
+    -fx-padding: 8 0;
+}
+
+/* ========================================
+   COMBOBOX
+   ======================================== */
+
+.permission-combo-box {
     -fx-background-color: -fx-theme-input-bg;
+    -fx-border-color: -fx-theme-input-border;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-background-insets: 0;
+    -fx-padding: 6 10;
+}
+
+.permission-combo-box .list-cell {
+    -fx-text-fill: -fx-theme-text;
+    -fx-background-color: transparent;
+}
+
+.permission-combo-box .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.permission-combo-box .arrow {
+    -fx-background-color: -fx-theme-text-muted;
 }
 
 .permission-combo-box:focused {
     -fx-border-color: -fx-accent-color;
+    -fx-border-width: 2;
 }
 
-/* Action buttons (primary) */
+.permission-combo-box-popup .list-view {
+    -fx-background-color: -fx-theme-bg;
+    -fx-border-color: -fx-theme-border;
+}
+
+.permission-combo-box-popup .list-cell {
+    -fx-background-color: -fx-theme-bg;
+    -fx-text-fill: -fx-theme-text;
+    -fx-padding: 8 10;
+}
+
+.permission-combo-box-popup .list-cell:hover {
+    -fx-background-color: -fx-theme-bg-secondary;
+}
+
+/* ========================================
+   ACTION BUTTONS (Primary - Accent colored)
+   ======================================== */
+
 .entry-action-button {
-    -fx-padding: 8 16;
     -fx-background-color: -fx-accent-color;
     -fx-text-fill: ladder(-fx-accent-color, white 49%, black 50%);
-    -fx-border-radius: 4;
-    -fx-cursor: hand;
     -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 10 18;
+    -fx-background-radius: 6;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
 }
 
 .entry-action-button:hover {
-    -fx-background-color: derive(-fx-accent-color, -10%);
-}
-
-.dark .entry-action-button:hover {
-    -fx-background-color: derive(-fx-accent-color, 10%);
-}
-
-.entry-action-button:pressed {
     -fx-background-color: derive(-fx-accent-color, -15%);
 }
 
-/* Navigation buttons (secondary) */
+.dark .entry-action-button:hover {
+    -fx-background-color: derive(-fx-accent-color, 15%);
+}
+
+.entry-action-button:pressed {
+    -fx-background-color: derive(-fx-accent-color, -25%);
+}
+
+.dark .entry-action-button:pressed {
+    -fx-background-color: derive(-fx-accent-color, 25%);
+}
+
+.entry-action-button:focused {
+    -fx-background-color: derive(-fx-accent-color, 5%);
+}
+
+/* ========================================
+   NAVIGATION BUTTONS (Secondary - Outlined)
+   ======================================== */
+
 .entry-nav-button {
-    -fx-background-color: -fx-theme-bg-secondary;
+    -fx-background-color: -fx-theme-bg;
     -fx-text-fill: -fx-theme-text;
+    -fx-font-size: 12px;
+    -fx-padding: 10 14;
     -fx-border-color: -fx-theme-border;
-    -fx-border-radius: 4;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-background-insets: 0;
     -fx-cursor: hand;
-    -fx-padding: 8 12;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
 }
 
 .entry-nav-button:hover {
-    -fx-background-color: derive(-fx-theme-bg-secondary, 10%);
+    -fx-background-color: -fx-theme-bg-secondary;
     -fx-border-color: -fx-accent-color;
 }
 
 .entry-nav-button:pressed {
     -fx-background-color: derive(-fx-theme-bg-secondary, -10%);
+}
+
+.dark .entry-nav-button:pressed {
+    -fx-background-color: derive(-fx-theme-bg-secondary, 10%);
+}
+
+.entry-nav-button:focused {
+    -fx-border-color: -fx-accent-color;
+}
+
+.entry-nav-button:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: default;
+}
+
+/* ========================================
+   SCROLL BARS (Themed)
+   ======================================== */
+
+.entry-list-view .scroll-bar:vertical,
+.entry-textarea .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-pref-width: 10;
+}
+
+.entry-list-view .scroll-bar:vertical .track,
+.entry-textarea .scroll-bar:vertical .track {
+    -fx-background-color: transparent;
+}
+
+.entry-list-view .scroll-bar:vertical .thumb,
+.entry-textarea .scroll-bar:vertical .thumb {
+    -fx-background-color: -fx-theme-border;
+    -fx-background-radius: 5;
+}
+
+.entry-list-view .scroll-bar:vertical .thumb:hover,
+.entry-textarea .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: -fx-theme-text-muted;
+}
+
+.entry-list-view .scroll-bar .increment-button,
+.entry-list-view .scroll-bar .decrement-button,
+.entry-textarea .scroll-bar .increment-button,
+.entry-textarea .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.entry-list-view .scroll-bar .increment-arrow,
+.entry-list-view .scroll-bar .decrement-arrow,
+.entry-textarea .scroll-bar .increment-arrow,
+.entry-textarea .scroll-bar .decrement-arrow {
+    -fx-shape: "";
+    -fx-padding: 0;
+}
 }

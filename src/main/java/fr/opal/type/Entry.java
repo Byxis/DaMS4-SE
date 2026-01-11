@@ -6,7 +6,8 @@ import java.util.List;
 
 /**
  * Represents a node in the project's hierarchical tree.
- * An Entry may contain text, comments, and relationships to parent and child entries.
+ * An Entry may contain text, comments (via channel), and relationships to parent and child entries.
+ * Comments are stored in a unified channel - use channelId with ChannelDAO to access them.
  */
 public class Entry {
     private int id;
@@ -14,7 +15,8 @@ public class Entry {
     private String content;
     private Entry parentEntry;
     private ArrayList<Entry> childEntries;
-    private List<Comment> comments;
+    private int channelId;  // Unified channel for comments
+    private List<Message> messages;  // Cached messages from channel (transient, not persisted here)
     private MetaData metadata;
     private User author;
     private EntryPermissionManager permissionManager;
@@ -24,7 +26,7 @@ public class Entry {
      */
     public Entry() {
         this.childEntries = new ArrayList<>();
-        this.comments = new ArrayList<>();
+        this.messages = new ArrayList<>();
         this.metadata = new MetaData();
         this.permissionManager = new EntryPermissionManager();
     }
@@ -38,7 +40,7 @@ public class Entry {
         this.author = author;
         this.parentEntry = null;
         this.childEntries = new ArrayList<>();
-        this.comments = new ArrayList<>();
+        this.messages = new ArrayList<>();
         this.metadata = new MetaData();
         this.permissionManager = new EntryPermissionManager();
 
@@ -78,8 +80,12 @@ public class Entry {
         return childEntries;
     }
 
-    public List<Comment> getComments() {
-        return comments;
+    public int getChannelId() {
+        return channelId;
+    }
+
+    public List<Message> getMessages() {
+        return messages;
     }
 
     public MetaData getMetadata() {
@@ -113,8 +119,12 @@ public class Entry {
         this.childEntries = childEntries;
     }
 
-    public void setComments(List<Comment> comments) {
-        this.comments = comments;
+    public void setChannelId(int channelId) {
+        this.channelId = channelId;
+    }
+
+    public void setMessages(List<Message> messages) {
+        this.messages = messages;
     }
 
     public void setMetadata(MetaData metadata) {
@@ -187,20 +197,22 @@ public class Entry {
         return false;
     }
 
-    // Comment management
+    // Message management (comments stored in unified channel)
     /**
-     * Adds a comment to this entry
+     * Adds a message to this entry's cached message list.
+     * Note: To persist, use ChannelDAO.saveMessage() with this entry's channelId.
      */
-    public void addComment(Comment comment) {
-        comments.add(comment);
+    public void addMessage(Message message) {
+        messages.add(message);
         this.metadata.setLastModified(new Date());
     }
 
     /**
-     * Removes a comment from this entry
+     * Removes a message from this entry's cached message list.
+     * Note: To persist deletion, use ChannelDAO.deleteMessage().
      */
-    public void removeComment(Comment comment) {
-        comments.remove(comment);
+    public void removeMessage(Message message) {
+        messages.remove(message);
         this.metadata.setLastModified(new Date());
     }
 
