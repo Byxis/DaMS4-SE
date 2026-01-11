@@ -97,6 +97,40 @@ public class DatabaseInitializer {
                     "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE" +
                     ");");
 
+            // Entries Table
+            stmt.execute("CREATE TABLE IF NOT EXISTS entries (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY," +
+                    "title VARCHAR(255) NOT NULL," +
+                    "content LONGTEXT," +
+                    "parent_id INT," +
+                    "author_id INT NOT NULL," +
+                    "creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+                    "FOREIGN KEY (parent_id) REFERENCES entries(id) ON DELETE CASCADE," +
+                    "FOREIGN KEY (author_id) REFERENCES users(id)" +
+                    ");");
+
+            // Comments Table
+            stmt.execute("CREATE TABLE IF NOT EXISTS comments (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY," +
+                    "entry_id INT NOT NULL," +
+                    "content TEXT NOT NULL," +
+                    "author_id INT NOT NULL," +
+                    "created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE," +
+                    "FOREIGN KEY (author_id) REFERENCES users(id)" +
+                    ");");
+
+            // Entry Permissions Table
+            stmt.execute("CREATE TABLE IF NOT EXISTS entry_permissions (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY," +
+                    "entry_id INT NOT NULL," +
+                    "username VARCHAR(255) NOT NULL," +
+                    "permission VARCHAR(50)," +
+                    "FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE," +
+                    "UNIQUE KEY unique_entry_user (entry_id, username)" +
+                    ");");
+
         } catch (SQLException e) {
             LOGGER.severe("Error initializing database tables: " + e.getMessage());
             throw new RuntimeException("Database initialization failed", e);

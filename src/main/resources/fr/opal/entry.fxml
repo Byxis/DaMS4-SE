@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane prefHeight="800.0" prefWidth="1200.0" styleClass="main-container" stylesheets="@style.css, @entry.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.EntryController">
+   <!-- CENTER: Main Content (2-Column Layout) -->
+   <center>
+      <SplitPane dividerPositions="0.7" prefHeight="720.0" prefWidth="1200.0" styleClass="entry-split-pane">
+         <!-- LEFT COLUMN: Entry Content (70%) -->
+         <VBox prefHeight="720.0" prefWidth="840.0" spacing="10.0" style="-fx-padding: 20;" styleClass="entry-left-column">
+            <!-- Project Title Header -->
+            <HBox alignment="CENTER_LEFT" prefHeight="40.0" spacing="15.0" styleClass="entry-header">
+               <children>
+                  <Label fx:id="projectTitle" styleClass="entry-header-title" text="Project Name" />
+                  <HBox HBox.hgrow="ALWAYS" />
+                  <Button fx:id="importBtn" mnemonicParsing="false" onAction="#onImport" styleClass="entry-action-button" text="Import" />
+                  <Button fx:id="exportBtn" mnemonicParsing="false" onAction="#onExport" styleClass="entry-action-button" text="Export" />
+               </children>
+            </HBox>
+
+            <!-- Entry Title -->
+            <VBox spacing="5.0">
+               <children>
+                  <Label styleClass="entry-label" text="Title" />
+                  <TextField fx:id="entryTitleField" prefHeight="35.0" promptText="Entry title" styleClass="entry-text-field" />
+               </children>
+            </VBox>
+
+            <!-- Entry Content -->
+            <VBox spacing="5.0" VBox.vgrow="ALWAYS">
+               <children>
+                  <Label styleClass="entry-label" text="Content" />
+                  <TextArea fx:id="entryContent" prefHeight="400.0" wrapText="true" VBox.vgrow="ALWAYS" styleClass="entry-textarea" />
+               </children>
+            </VBox>
+
+            <!-- Action Buttons -->
+            <HBox alignment="CENTER_LEFT" prefHeight="50.0" spacing="10.0" styleClass="entry-footer">
+               <children>
+                  <Button fx:id="saveEntryBtn" mnemonicParsing="false" onAction="#onSaveEntry" styleClass="entry-action-button" text="Save Entry" />
+                  <Button fx:id="createEntryBtn" mnemonicParsing="false" onAction="#onCreateEntry" styleClass="entry-action-button" text="Create Entry" />
+                  <Button fx:id="deleteEntryBtn" mnemonicParsing="false" onAction="#onDeleteEntry" styleClass="entry-action-button" text="Delete Entry" />
+                  <HBox HBox.hgrow="ALWAYS" />
+                  <Button fx:id="projectRootRedirBtn" mnemonicParsing="false" onAction="#onNavigateToRoot" styleClass="entry-nav-button" text="📍 Root" />
+                  <Button fx:id="entryParentRedirBtn" mnemonicParsing="false" onAction="#onNavigateToParent" styleClass="entry-nav-button" text="⬆️ Parent" />
+                  <Button fx:id="subDirBtn" mnemonicParsing="false" onAction="#onShowSubDirectories" styleClass="entry-nav-button" text="📂 Children" />
+               </children>
+            </HBox>
+         </VBox>
+
+         <!-- RIGHT COLUMN: Permissions & Comments (30%) -->
+         <VBox prefHeight="720.0" prefWidth="360.0" spacing="0.0" styleClass="entry-right-column">
+            <!-- SECTION 1: PERMISSIONS -->
+            <VBox spacing="10.0" styleClass="permissions-section">
+               <children>
+                  <Label styleClass="section-header" text="Permissions" />
+                  
+                  <!-- Users with Permissions List -->
+                  <ListView fx:id="usersPermissionsList" prefHeight="150.0" styleClass="entry-list-view" VBox.vgrow="ALWAYS">
+                     <VBox.margin>
+                        <Insets bottom="5.0" />
+                     </VBox.margin>
+                  </ListView>
+
+                  <!-- Add Permission Controls -->
+                  <Separator styleClass="entry-separator" />
+                  <Label styleClass="entry-label" text="Grant Permission" />
+                  
+                  <VBox spacing="5.0">
+                     <children>
+                        <TextField fx:id="usernameField" promptText="Username" styleClass="entry-text-field" />
+                        <ComboBox fx:id="permissionComboBox" prefWidth="330.0" styleClass="permission-combo-box" />
+                        <Button fx:id="addPermissionBtn" mnemonicParsing="false" onAction="#onAddPermission" styleClass="entry-action-button" text="Add Permission" />
+                     </children>
+                  </VBox>
+               </children>
+            </VBox>
+
+            <!-- SECTION 2: COMMENTS -->
+            <VBox spacing="10.0" styleClass="comments-section" VBox.vgrow="ALWAYS">
+               <children>
+                  <Label styleClass="section-header" text="Comments" />
+                  
+                  <!-- Comments List -->
+                  <ListView fx:id="commentsList" prefHeight="200.0" styleClass="entry-list-view" VBox.vgrow="ALWAYS">
+                     <VBox.margin>
+                        <Insets bottom="5.0" />
+                     </VBox.margin>
+                  </ListView>
+
+                  <!-- Add Comment -->
+                  <Separator styleClass="entry-separator" />
+                  <Label styleClass="entry-label" text="Add Comment" />
+                  
+                  <TextArea fx:id="commentInput" prefHeight="80.0" promptText="Write a comment..." wrapText="true" styleClass="entry-textarea" />
+                  <Button fx:id="addCommentBtn" mnemonicParsing="false" onAction="#onAddComment" styleClass="entry-action-button" text="Post Comment" />
+               </children>
+            </VBox>
+         </VBox>
+      </SplitPane>
+   </center>
+</BorderPane>

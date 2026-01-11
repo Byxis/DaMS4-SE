@@ -2,7 +2,6 @@ package fr.opal.controller;
 
 import fr.opal.facade.AuthFacade;
 import fr.opal.service.SceneManager;
-import fr.opal.type.Permission;
 import fr.opal.type.Profile;
 import fr.opal.type.Session;
 import fr.opal.type.User;
@@ -12,7 +11,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Label;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Controller for authentication operations including login and registration
@@ -190,38 +188,6 @@ public class AuthController {
     @FXML
     public void updateProfile(int userId, Profile profile) {
         authFacade.updateProfile(userId, profile);
-    }
-
-    /**
-     * Creates a new permission for user
-     */
-    @FXML
-    public Permission createPermission(int userId, String permissionName) {
-        return authFacade.createPermission(userId, permissionName);
-    }
-
-    /**
-     * Deletes a permission
-     */
-    @FXML
-    public void deletePermission(int permissionId) {
-        authFacade.deletePermission(permissionId);
-    }
-
-    /**
-     * Updates a permission
-     */
-    @FXML
-    public void updatePermission(int permissionId, String permissionName) {
-        authFacade.updatePermission(permissionId, permissionName);
-    }
-
-    /**
-     * Lists all permissions for a user
-     */
-    @FXML
-    public List<Permission> listPermissions(int userId) {
-        return authFacade.listPermissions(userId);
     }
 
     public Session getCurrentSession() {

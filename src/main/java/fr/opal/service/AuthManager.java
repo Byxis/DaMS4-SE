@@ -151,9 +151,26 @@ public class AuthManager {
     }
 
     /**
+     * Check if a user is currently authenticated
+     */
+    public boolean isAuthenticated() {
+        return connectedUser != null;
+    }
+
+    /**
      * Get session by ID
      */
     public Session getSession(String sessionId) {
         return activeSessions.get(sessionId);
+    }
+
+    /**
+     * Gets a user by username
+     * @param username The username to look up
+     * @return User if found, null otherwise
+     */
+    public User getUserByUsername(String username) {
+        AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
+        return factory.createUserDAO().getUserById(username);
     }
 }

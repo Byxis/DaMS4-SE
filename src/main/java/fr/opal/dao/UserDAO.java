@@ -1,7 +1,7 @@
 package fr.opal.dao;
 
-import fr.opal.type.User;
 import fr.opal.type.Permission;
+import fr.opal.type.User;
 import fr.opal.type.Profile;
 
 import java.util.List;
@@ -15,6 +15,11 @@ public abstract class UserDAO {
      * Get user by username
      */
     public abstract User getUserById(String username);
+
+    /**
+     * Get user by database ID (integer primary key)
+     */
+    abstract public User getUserByDatabaseId(int id);
 
     /**
      * Create a new user

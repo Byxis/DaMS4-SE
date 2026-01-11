@@ -14,14 +14,22 @@ import javafx.scene.layout.AnchorPane;
 /**
  * Controller for the home screen
  */
-public class HomeController
-{
-    @FXML private AnchorPane rootPane;
-    @FXML private Button userProfileBtn;
-    @FXML private Label usernameLabel;
-    @FXML private Button logoutBtn;
-    @FXML private Button settingsBtn;
-    @FXML private Label welcomeLabel;
+public class HomeController {
+
+    @FXML
+    private AnchorPane rootPane;
+    @FXML
+    private Button userProfileBtn;
+    @FXML
+    private Label usernameLabel;
+    @FXML
+    private Button logoutBtn;
+    @FXML
+    private Button settingsBtn;
+    @FXML
+    private Label welcomeLabel;
+    @FXML
+    private Button entryBtn;
 
     private AuthFacade authFacade;
     private SessionPropertiesFacade sessionPropertiesFacade;
@@ -133,6 +141,18 @@ public class HomeController
     @FXML private void openSettings()
     {
         sceneManager.openSettingsDialog(currentSession, sessionPropertiesFacade, () -> {});
+    }
+
+    /**
+     * Navigates to the entry management view (opens in new window)
+     */
+    @FXML
+    private void goToEntryView() {
+        try {
+            sceneManager.openNewWindow("/fr/opal/entry.fxml", "Entries - Opal", 1200, 800);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

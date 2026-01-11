@@ -34,4 +34,9 @@ public class MySQLDAOFactory extends AbstractDAOFactory {
     public FriendsDAO createFriendsDAO() {
         return new MySQLFriendsDAO(connection);
     }
+
+    @Override
+    public EntryDAO createEntryDAO() {
+        return new MySQLEntryDAO(connection);
+    }
 }
