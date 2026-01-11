@@ -7,7 +7,7 @@ import fr.opal.type.UserPermission;
 import fr.opal.type.EPermission;
 import fr.opal.type.EntryContextDTO;
 import fr.opal.dao.EntryDAO;
-import fr.opal.factory.AbstractEntryFactory;
+import fr.opal.factory.AbstractDAOFactory;
 import fr.opal.facade.EntryFacade;
 
 import java.io.File;
@@ -35,7 +35,7 @@ public class EntryManager {
      */
     public EntryManager() {
         this.authManager = AuthManager.getInstance();
-        this.dao = AbstractEntryFactory.getInstance().getEntryDAO();
+        this.dao = AbstractDAOFactory.getFactory().createEntryDAO();
         this.channelManager = new ChannelManager();
         this.currentEntry = null;
         this.currentUser = null;
@@ -167,7 +167,7 @@ public class EntryManager {
      * Creates a new entry and saves it immediately
      */
     public Entry createNewEntry(String title, String content, User author) {
-        Entry entry = AbstractEntryFactory.getInstance().createEntry(title, content, author);
+        Entry entry = AbstractDAOFactory.getFactory().createEntry(title, content, author);
         persistEntry(entry);
         return entry;
     }
