@@ -5,11 +5,11 @@ import fr.opal.facade.SessionPropertiesFacade;
 import fr.opal.service.SceneManager;
 import fr.opal.type.Profile;
 import fr.opal.type.Session;
+import java.io.IOException;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
 
-import java.io.IOException;
 
 /**
  * Controller for the home screen
@@ -37,54 +37,63 @@ public class HomeController {
     private Session currentSession;
     private Profile currentProfile;
 
-    public HomeController() {
+    public HomeController()
+    {
         this.authFacade = AuthFacade.getInstance();
         this.sessionPropertiesFacade = SessionPropertiesFacade.getInstance();
         this.sceneManager = SceneManager.getInstance();
     }
 
-    @FXML
-    public void initialize() {
+    @FXML public void initialize()
+    {
         currentSession = authFacade.getCurrentSession();
-        if (currentSession != null) {
+        if (currentSession != null)
+        {
             usernameLabel.setText(currentSession.getUsername());
             currentProfile = authFacade.getProfile(currentSession.getUserId());
             sessionPropertiesFacade.loadSettings(currentSession.getUserId());
 
-            
             String welcomeText = "Welcome, " + currentSession.getUsername() + "!";
-            if (currentProfile != null && currentProfile.getDisplayName() != null) {
+            if (currentProfile != null && currentProfile.getDisplayName() != null)
+            {
                 welcomeText = "Welcome, " + currentProfile.getDisplayName() + "!";
             }
             welcomeLabel.setText(welcomeText);
-        } else {
+        }
+        else
+        {
             redirectToLogin();
         }
     }
 
-
     /**
      * Opens the profile editing dialog
      */
-    @FXML
-    private void openProfileDialog() {
-        sceneManager.openProfileDialog(currentSession, currentProfile, sessionPropertiesFacade, (displayName, bio, email) -> {
-            saveProfileChanges(displayName, bio, email);
-        });
+    @FXML private void openProfileDialog()
+    {
+        sceneManager.openProfileDialog(
+            currentSession, currentProfile, sessionPropertiesFacade, (displayName, bio, email) -> {
+                saveProfileChanges(displayName, bio, email);
+            });
     }
 
     /**
      * Saves profile changes
      */
-    private void saveProfileChanges(String firstName, String lastName, String email) {
-        try {
-            if (currentSession != null) {
+    private void saveProfileChanges(String firstName, String lastName, String email)
+    {
+        try
+        {
+            if (currentSession != null)
+            {
                 Profile profile = new Profile(currentSession.getUserId(), firstName, lastName, email);
                 authFacade.updateProfile(currentSession.getUserId(), profile);
                 currentProfile = profile;
                 refreshWelcomeMessage();
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             e.printStackTrace();
         }
     }
@@ -92,14 +101,20 @@ public class HomeController {
     /**
      * Refreshes the welcome message with updated profile data
      */
-    private void refreshWelcomeMessage() {
+    private void refreshWelcomeMessage()
+    {
         String welcomeText = "Welcome, " + currentSession.getUsername() + "!";
-        if (currentProfile != null && currentProfile.getDisplayName() != null && !currentProfile.getDisplayName().isEmpty()) {
+        if (currentProfile != null && currentProfile.getDisplayName() != null
+            && !currentProfile.getDisplayName().isEmpty())
+        {
             String firstName = currentProfile.getDisplayName();
             String lastName = currentProfile.getBio() != null ? currentProfile.getBio() : "";
-            if (!lastName.isEmpty()) {
+            if (!lastName.isEmpty())
+            {
                 welcomeText = "Welcome, " + firstName + " " + lastName + "!";
-            } else {
+            }
+            else
+            {
                 welcomeText = "Welcome, " + firstName + "!";
             }
         }
@@ -109,11 +124,13 @@ public class HomeController {
     /**
      * Handles user logout
      */
-    @FXML
-    private void logout() {
-        if (currentSession != null) {
+    @FXML private void logout()
+    {
+        if (currentSession != null)
+        {
             authFacade.logout(currentSession.getId());
             sessionPropertiesFacade.clearSettings();
+            sceneManager.clearCache();
         }
         redirectToLogin();
     }
@@ -121,8 +138,8 @@ public class HomeController {
     /**
      * Opens the session settings dialog
      */
-    @FXML
-    private void openSettings() {
+    @FXML private void openSettings()
+    {
         sceneManager.openSettingsDialog(currentSession, sessionPropertiesFacade, () -> {});
     }
 
@@ -141,11 +158,15 @@ public class HomeController {
     /**
      * Redirects to login screen
      */
-    private void redirectToLogin() {
-        try {
+    private void redirectToLogin()
+    {
+        try
+        {
             AuthController.clearMessageLabel();
             sceneManager.switchTo("/fr/opal/login-view.fxml");
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
         }
     }
@@ -153,11 +174,14 @@ public class HomeController {
     /**
      * Opens the friends list view
      */
-    @FXML
-    private void openFriendsList() {
-        try {
+    @FXML private void openFriendsList()
+    {
+        try
+        {
             sceneManager.openNewWindow("/fr/opal/friend-list-view.fxml", "Friends - Opal", 800, 600);
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
         }
     }
@@ -165,11 +189,14 @@ public class HomeController {
     /**
      * Opens the friend search view
      */
-    @FXML
-    private void openFriendSearch() {
-        try {
+    @FXML private void openFriendSearch()
+    {
+        try
+        {
             sceneManager.openNewWindow("/fr/opal/friend-search-view.fxml", "Find Friends - Opal", 800, 600);
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
         }
     }

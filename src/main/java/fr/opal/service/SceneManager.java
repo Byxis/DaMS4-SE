@@ -7,6 +7,9 @@ import fr.opal.type.Profile;
 import fr.opal.type.Session;
 import fr.opal.util.ColorUtil;
 import fr.opal.util.StageHelper;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -14,22 +17,20 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Manager for handling scene transitions and window management in JavaFX.
  */
-public class SceneManager {
-
+public class SceneManager
+{
     private static SceneManager instance;
 
     private Stage primaryStage;
     private final Map<String, CachedScene> cache = new HashMap<>();
     private final SessionPropertiesFacade sessionPropertiesFacade = SessionPropertiesFacade.getInstance();
 
-    private SceneManager() {
+    private SceneManager()
+    {
         SessionPropertiesController.addGlobalSettingsListener(this::refreshCurrentTheme);
     }
 
@@ -37,18 +38,30 @@ public class SceneManager {
      * Get singleton instance
      * @return The SceneManager instance
      */
-    public static SceneManager getInstance() {
-        if (instance == null) {
+    public static SceneManager getInstance()
+    {
+        if (instance == null)
+        {
             instance = new SceneManager();
         }
         return instance;
     }
 
     /**
+     * Clears the scene cache used for storing loaded FXML scenes.
+     * This forces a reload of the FXML/Controller next time a scene is requested.
+     */
+    public void clearCache()
+    {
+        cache.clear();
+    }
+
+    /**
      * Initializes the SceneManager with the primary stage.
      * @param stage The primary stage
      */
-    public void initialize(Stage stage) {
+    public void initialize(Stage stage)
+    {
         this.primaryStage = stage;
     }
 
@@ -59,17 +72,21 @@ public class SceneManager {
      * @param fxmlPath The path to the FXML file
      * @throws IOException if the FXML file cannot be loaded
      */
-    public void switchTo(String fxmlPath) throws IOException {
+    public void switchTo(String fxmlPath) throws IOException
+    {
         CachedScene cached = cache.get(fxmlPath);
 
-        if (cached == null) {
+        if (cached == null)
+        {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
             sessionPropertiesFacade.applyTheme(root);
             double width = root.prefWidth(-1);
             double height = root.prefHeight(-1);
-            if (width <= 0) width = 600;
-            if (height <= 0) height = 400;
+            if (width <= 0)
+                width = 600;
+            if (height <= 0)
+                height = 400;
             Scene scene = new Scene(root, width, height);
             cached = new CachedScene(scene, loader.getController());
             cache.put(fxmlPath, cached);
@@ -87,7 +104,8 @@ public class SceneManager {
      * @param height The window height
      * @throws IOException if the FXML file cannot be loaded
      */
-    public void openNewWindow(String fxmlPath, String title, double width, double height) throws IOException {
+    public void openNewWindow(String fxmlPath, String title, double width, double height) throws IOException
+    {
         FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
         Parent root = loader.load();
         sessionPropertiesFacade.applyTheme(root);
@@ -109,22 +127,28 @@ public class SceneManager {
      * @return The loaded Scene
      * @throws IOException if the FXML file cannot be loaded
      */
-    public Scene loadScene(String fxmlPath) throws IOException {
+    public Scene loadScene(String fxmlPath) throws IOException
+    {
         FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
         Parent root = loader.load();
         sessionPropertiesFacade.applyTheme(root);
         double width = root.prefWidth(-1);
         double height = root.prefHeight(-1);
-        if (width <= 0) width = 600;
-        if (height <= 0) height = 400;
+        if (width <= 0)
+            width = 600;
+        if (height <= 0)
+            height = 400;
         return new Scene(root, width, height);
     }
 
     /**
      * Ouvre la boîte de dialogue de profil utilisateur et transmet les valeurs saisies au callback onProfileSaved.
      */
-    public void openProfileDialog(Session currentSession, Profile currentProfile, SessionPropertiesFacade sessionPropertiesFacade, ProfileDialogCallback onProfileSaved) {
-        try {
+    public void openProfileDialog(Session currentSession, Profile currentProfile,
+        SessionPropertiesFacade sessionPropertiesFacade, ProfileDialogCallback onProfileSaved)
+    {
+        try
+        {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fr/opal/profile-dialog.fxml"));
             DialogPane dialogPane = loader.load();
 
@@ -137,7 +161,8 @@ public class SceneManager {
             TextField bioField = (TextField) dialogPane.lookup("#bioField");
 
             usernameField.setText(currentSession.getUsername());
-            if (currentProfile != null) {
+            if (currentProfile != null)
+            {
                 emailField.setText(currentProfile.getContactInfo());
                 displayNameField.setText(currentProfile.getDisplayName());
                 bioField.setText(currentProfile.getBio());
@@ -153,15 +178,14 @@ public class SceneManager {
             });
 
             dialog.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.OK && onProfileSaved != null) {
-                    onProfileSaved.onProfileSaved(
-                        displayNameField.getText(),
-                        bioField.getText(),
-                        emailField.getText()
-                    );
+                if (response == ButtonType.OK && onProfileSaved != null)
+                {
+                    onProfileSaved.onProfileSaved(displayNameField.getText(), bioField.getText(), emailField.getText());
                 }
             });
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
         }
     }
@@ -169,16 +193,21 @@ public class SceneManager {
     /**
      * Interface de callback pour la récupération des valeurs du profil.
      */
-    public interface ProfileDialogCallback {
+    public interface ProfileDialogCallback
+    {
         void onProfileSaved(String displayName, String bio, String email);
     }
 
     /**
      * Ouvre la boîte de dialogue des paramètres d'apparence.
      */
-    public void openSettingsDialog(Session currentSession, SessionPropertiesFacade sessionPropertiesFacade, Runnable onSettingsChanged) {
-        try {
-            if (currentSession != null) {
+    public void openSettingsDialog(
+        Session currentSession, SessionPropertiesFacade sessionPropertiesFacade, Runnable onSettingsChanged)
+    {
+        try
+        {
+            if (currentSession != null)
+            {
                 sessionPropertiesFacade.loadSettings(currentSession.getUserId());
             }
 
@@ -196,7 +225,8 @@ public class SceneManager {
             });
 
             dialog.getDialogPane().getStylesheets().add(getClass().getResource("/fr/opal/style.css").toExternalForm());
-            dialog.getDialogPane().getStylesheets().add(getClass().getResource("/fr/opal/settings.css").toExternalForm());
+            dialog.getDialogPane().getStylesheets().add(
+                getClass().getResource("/fr/opal/settings.css").toExternalForm());
             sessionPropertiesFacade.applyTheme(dialog.getDialogPane());
             dialog.getDialogPane().setContent(settingsContent);
             sessionPropertiesFacade.applyTheme(settingsContent);
@@ -206,11 +236,14 @@ public class SceneManager {
             settingsController.initialize();
 
             settingsController.setOnSettingsChanged(() -> {
-                if (onSettingsChanged != null) onSettingsChanged.run();
+                if (onSettingsChanged != null)
+                    onSettingsChanged.run();
             });
 
             dialog.showAndWait();
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
         }
     }
@@ -218,13 +251,17 @@ public class SceneManager {
     /**
      * Reapplies the current theme to all open stages.
      */
-    private void refreshCurrentTheme() {
-        if (primaryStage != null && primaryStage.getScene() != null) {
+    private void refreshCurrentTheme()
+    {
+        if (primaryStage != null && primaryStage.getScene() != null)
+        {
             sessionPropertiesFacade.applyTheme(primaryStage.getScene().getRoot());
         }
 
-        for (Stage stage : StageHelper.getStages()) {
-            if (stage.getScene() != null) {
+        for (Stage stage : StageHelper.getStages())
+        {
+            if (stage.getScene() != null)
+            {
                 sessionPropertiesFacade.applyTheme(stage.getScene().getRoot());
             }
         }
