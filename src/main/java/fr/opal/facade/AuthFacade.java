@@ -106,4 +106,11 @@ public class AuthFacade {
     public void setCurrentSession(Session session) {
         this.currentSession = session;
     }
+
+    /**
+     * Check if a user exists by username
+     */
+    public boolean userExists(String username) {
+        return AuthManager.getInstance().userExists(username);
+    }
 }

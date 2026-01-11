@@ -3,6 +3,9 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -34,6 +37,18 @@
          <children>
             <Label styleClass="title-large" text="Welcome" />
             <Label fx:id="welcomeLabel" styleClass="subtitle-label" text="You are successfully logged in to Opal." textAlignment="CENTER" wrapText="true" />
+            <Button fx:id="createProjectBtn" mnemonicParsing="false" onAction="#createNewProject" style="-fx-font-size: 14; -fx-padding: 12 30;" text="Create a new project" />
+            
+            <Separator />
+            
+            <HBox spacing="15">
+               <Label style="-fx-font-size: 16; -fx-font-weight: bold;" text="Your Projects" />
+               <Button fx:id="invitationsBtn" mnemonicParsing="false" onAction="#openInvitations" style="-fx-font-size: 12;" text="📬 Invitations (0)" />
+            </HBox>
+            <TextField promptText="🔍 Search projects..." style="-fx-padding: 8;" fx:id="homeSearchField" prefHeight="35"/>
+            <ScrollPane fitToWidth="true" style="-fx-padding: 0;">
+               <VBox fx:id="projectsContainer" spacing="10" style="-fx-padding: 10;" />
+            </ScrollPane>
          </children>
          <opaqueInsets>
             <Insets />

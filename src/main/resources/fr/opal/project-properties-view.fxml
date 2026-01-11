@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.collections.FXCollections?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" style="-fx-padding: 0;">
+    <top>
+        <VBox style="-fx-background-color: #0078d4; -fx-padding: 15;" spacing="10">
+            <Label text="Project Properties" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: white;"/>
+            <Label text="Configure your project settings" style="-fx-font-size: 12; -fx-text-fill: #e0e0e0;"/>
+        </VBox>
+    </top>
+    
+    <center>
+        <VBox spacing="15" style="-fx-padding: 20;">
+            <!-- Project Information Section -->
+            <TitledPane text="Project Information" expanded="true">
+                <VBox spacing="10" style="-fx-padding: 10;">
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Project Name:" prefWidth="120"/>
+                        <TextField fx:id="projectNameField" prefWidth="300"/>
+                        <Button text="Update"/>
+                    </HBox>
+                    
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Project State:" prefWidth="120"/>
+                        <ComboBox fx:id="projectStateCombo" prefWidth="300">
+                            <items>
+                                <FXCollections fx:factory="observableArrayList">
+                                    <String fx:value="PUBLIC"/>
+                                    <String fx:value="PRIVATE"/>
+                                    <String fx:value="ARCHIVED"/>
+                                </FXCollections>
+                            </items>
+                        </ComboBox>
+                    </HBox>
+                </VBox>
+            </TitledPane>
+            
+            <!-- User Management Section -->
+            <TitledPane text="Project Users" expanded="true">
+                <VBox spacing="10" style="-fx-padding: 10;">
+                    <Label text="Manage project members and their permissions" style="-fx-font-size: 12;"/>
+                    
+                    <HBox spacing="10">
+                        <TextField fx:id="usernameField" promptText="Username" prefWidth="150"/>
+                        <ComboBox fx:id="roleCombo" prefWidth="150">
+                            <items>
+                                <FXCollections fx:factory="observableArrayList">
+                                    <String fx:value="OWNER"/>
+                                    <String fx:value="CONTRIBUTOR"/>
+                                    <String fx:value="READER"/>
+                                </FXCollections>
+                            </items>
+                        </ComboBox>
+                        <Button text="Invite User"/>
+                    </HBox>
+                    
+                    <TableView fx:id="usersTable" prefHeight="200">
+                        <columns>
+                            <TableColumn text="Username" prefWidth="200"/>
+                            <TableColumn text="Permission" prefWidth="150"/>
+                            <TableColumn text="Actions" prefWidth="100"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </TitledPane>
+        </VBox>
+    </center>
+    
+    <bottom>
+        <HBox style="-fx-background-color: #f5f5f5; -fx-padding: 10;" spacing="10">
+            <Button text="Save Changes" style="-fx-padding: 8 20;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cancel" style="-fx-padding: 8 20;"/>
+        </HBox>
+    </bottom>
+</BorderPane>

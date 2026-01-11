@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.collections.FXCollections?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.ProjectViewFXMLController" style="-fx-padding: 0;">
+    <top>
+        <Label text="Project Creation" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-padding: 15;"/>
+    </top>
+    
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-padding: 0;">
+            <VBox spacing="15" style="-fx-padding: 20;">
+                <HBox spacing="10">
+                    <TextField fx:id="projectNameField" promptText="Enter project name" prefWidth="250"/>
+                    <TextArea fx:id="projectDescriptionField" promptText="Enter project description (optional)" prefWidth="300" prefHeight="60" wrapText="true" style="-fx-control-inner-background: #1e1e1e; -fx-text-fill: white; -fx-prompt-text-fill: white; -fx-font-size: 12;"/>
+                    <Button fx:id="colorButton" text="🎨 Choose Color" onAction="#showColorPicker" style="-fx-padding: 10 20;"/>
+                    <Button fx:id="createProjectButton" text="Create Project" onAction="#createProject" style="-fx-padding: 10 20;"/>
+                </HBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

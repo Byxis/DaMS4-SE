@@ -156,4 +156,16 @@ public class AuthManager {
     public Session getSession(String sessionId) {
         return activeSessions.get(sessionId);
     }
+
+    /**
+     * Check if a user exists by username
+     */
+    public boolean userExists(String username) {
+        if (connectedUsers.containsKey(username)) {
+            return true;
+        }
+        AbstractUserFactory factory = AbstractUserFactory.getInstance();
+        User user = factory.createUserDAO().getUserById(username);
+        return user != null;
+    }
 }
