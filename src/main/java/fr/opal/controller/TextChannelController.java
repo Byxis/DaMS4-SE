@@ -1,12 +1,9 @@
 package fr.opal.controller;
 
 import fr.opal.facade.SessionPropertiesFacade;
-import fr.opal.service.AuthManager;
+import fr.opal.facade.ChannelFacade;
 import fr.opal.type.User;
 import fr.opal.type.Message;
-import fr.opal.dao.ChannelDAO;
-import fr.opal.factory.AbstractDAOFactory;
-import fr.opal.exception.DataAccessException;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -16,6 +13,7 @@ import java.util.List;
 
 /**
  * Controller for text channel messaging UI
+ * Strictly uses Facades only - no direct access to Managers or DAOs
  */
 public class TextChannelController {
     @FXML
@@ -40,10 +38,8 @@ public class TextChannelController {
     private Button sendMessageBtn;
 
     private SessionPropertiesFacade sessionPropertiesFacade;
-    private AuthManager authManager;
-    private ChannelDAO channelDAO;
+    private ChannelFacade channelFacade;
     private User currentUser;
-    private User otherUser;  // The friend/other participant
     private int currentChannelId;
 
     /**
@@ -52,11 +48,10 @@ public class TextChannelController {
     @FXML
     public void initialize() {
         sessionPropertiesFacade = SessionPropertiesFacade.getInstance();
-        authManager = AuthManager.getInstance();
-        channelDAO = AbstractDAOFactory.getFactory().createChannelDAO();
+        channelFacade = ChannelFacade.getInstance();
         
-        // Get current user from authentication
-        currentUser = authManager.getConnectedUser();
+        // Get current user from facade
+        currentUser = channelFacade.getAuthenticatedUser();
         
         // Load and apply session settings (theme/font size)
         if (currentUser != null) {
@@ -91,7 +86,6 @@ public class TextChannelController {
      */
     public void setChannelAndFriend(int channelId, User friend) {
         this.currentChannelId = channelId;
-        this.otherUser = friend;
         
         // Update the title to show who we're chatting with
         if (friend != null) {
@@ -112,14 +106,14 @@ public class TextChannelController {
         
         try {
             messagesList.getItems().clear();
-            List<Message> messages = channelDAO.getMessagesForChannel(currentChannelId);
+            List<Message> messages = channelFacade.getMessages(currentChannelId);
             messagesList.getItems().addAll(messages);
             
             // Scroll to latest message
             if (!messages.isEmpty()) {
                 messagesList.scrollTo(messages.size() - 1);
             }
-        } catch (DataAccessException e) {
+        } catch (ChannelFacade.InvalidChannelException e) {
             showErrorDialog("Error loading messages", e.getMessage());
         }
     }
@@ -129,33 +123,21 @@ public class TextChannelController {
      */
     @FXML
     public void onSendMessage() {
-        if (currentUser == null) {
-            showErrorDialog("Error", "User not authenticated");
-            return;
-        }
-        
-        if (currentChannelId <= 0) {
-            showErrorDialog("Error", "Channel not selected");
-            return;
-        }
-        
         String messageText = messageInput.getText().trim();
         
-        if (messageText.isEmpty()) {
-            showErrorDialog("Error", "Message cannot be empty");
-            return;
-        }
-        
         try {
-            // Create message and persist to database
-            Message message = new Message(currentChannelId, currentUser, messageText);
-            channelDAO.saveMessage(message);
+            // Delegate all validation and message creation to facade
+            channelFacade.sendMessage(currentChannelId, currentUser, messageText);
             
             // Clear input and refresh display
             messageInput.clear();
             loadChannelMessages();
-        } catch (DataAccessException e) {
-            showErrorDialog("Error sending message", e.getMessage());
+        } catch (ChannelFacade.AuthenticationException e) {
+            showErrorDialog("Error", e.getMessage());
+        } catch (ChannelFacade.InvalidChannelException e) {
+            showErrorDialog("Error", e.getMessage());
+        } catch (ChannelFacade.MessageException e) {
+            showErrorDialog("Error", e.getMessage());
         }
     }
 

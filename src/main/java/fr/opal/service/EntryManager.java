@@ -7,10 +7,10 @@ import fr.opal.type.UserPermission;
 import fr.opal.type.EPermission;
 import fr.opal.type.EntryContextDTO;
 import fr.opal.dao.EntryDAO;
-import fr.opal.dao.ChannelDAO;
 import fr.opal.factory.AbstractEntryFactory;
-import fr.opal.factory.AbstractDAOFactory;
+import fr.opal.facade.EntryFacade;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +27,7 @@ public class EntryManager {
     private User currentUser;
     private AuthManager authManager;
     private EntryDAO dao;
-    private ChannelDAO channelDAO;
+    private ChannelManager channelManager;
 
     /**
      * Constructor with no parameters
@@ -36,7 +36,7 @@ public class EntryManager {
     public EntryManager() {
         this.authManager = AuthManager.getInstance();
         this.dao = AbstractEntryFactory.getInstance().getEntryDAO();
-        this.channelDAO = AbstractDAOFactory.getFactory().createChannelDAO();
+        this.channelManager = new ChannelManager();
         this.currentEntry = null;
         this.currentUser = null;
     }
@@ -47,6 +47,14 @@ public class EntryManager {
     public EntryManager(User currentUser) {
         this();
         this.currentUser = currentUser;
+    }
+
+    /**
+     * Sets the current user for permission checks
+     * Used by facade to set context before operations
+     */
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
     }
 
     // Entry Retrieval & Persistence
@@ -79,6 +87,52 @@ public class EntryManager {
         this.currentEntry = targetEntry;
         
         return context;
+    }
+
+    /**
+     * Loads an entry with access permission check
+     * Business logic: verifies user has access before returning
+     * @throws PermissionException if user does not have access
+     */
+    public EntryContextDTO getEntryWithAccessCheck(int entryId) throws PermissionException {
+        EntryContextDTO context = getEntry(entryId);
+        if (context == null) {
+            return null;
+        }
+        
+        Entry targetEntry = context.getTargetEntry();
+        if (!targetEntry.canUserAccess(currentUser)) {
+            throw new PermissionException("You do not have permission to view this entry.");
+        }
+        
+        this.currentEntry = targetEntry;
+        return context;
+    }
+
+    /**
+     * Loads a project entry by name
+     * Business logic: searches through root entries to find matching project
+     */
+    public EntryContextDTO loadProjectByName(String projectName) {
+        List<Entry> rootEntries = getAllRootEntries();
+        Entry rootEntry = null;
+        
+        for (Entry entry : rootEntries) {
+            if (projectName.equals(entry.getTitle())) {
+                rootEntry = entry;
+                break;
+            }
+        }
+        
+        if (rootEntry != null) {
+            EntryContextDTO context = getEntry(rootEntry.getId());
+            if (context != null) {
+                this.currentEntry = context.getTargetEntry();
+            }
+            return context;
+        }
+        
+        return null;
     }
 
     /**
@@ -234,14 +288,14 @@ public class EntryManager {
         persistEntry(child);
     }
 
-    // Message Management (unified channel architecture)
+    // Message Management (unified channel architecture - delegates to ChannelManager)
 
     /**
-     * Adds a message to an entry's channel with permission checks
+     * Adds a comment to an entry's channel with permission checks
      * Permission: COMMENTOR or EDITOR
-     * Message is persisted immediately via ChannelDAO (Auto-Save)
+     * Message is persisted immediately via ChannelManager (Auto-Save)
      */
-    public void addMessage(int entryId, Message message) throws PermissionException {
+    public void addComment(int entryId, User sender, String content) throws PermissionException {
         // SECURITY: Verify user has permission to comment
         Entry entry = dao.loadEntryWithDetails(entryId);
         if (entry == null) {
@@ -252,14 +306,27 @@ public class EntryManager {
             throw new PermissionException("You do not have permission to comment on this entry");
         }
         
-        // Ensure message has correct channel ID
-        message.setChannelId(entry.getChannelId());
-        
-        // Persist message directly to unified channel
-        channelDAO.saveMessage(message);
-        
-        // Update cached messages in entry
-        entry.addMessage(message);
+        try {
+            // Delegate message creation and persistence to ChannelManager
+            Message message = channelManager.sendMessage(entry.getChannelId(), sender, content);
+            
+            // Update cached messages in entry
+            entry.addMessage(message);
+        } catch (ChannelManager.MessageValidationException e) {
+            throw new PermissionException(e.getMessage());
+        }
+    }
+
+    /**
+     * Adds a message to an entry's channel with permission checks
+     * @deprecated Use addComment(int entryId, User sender, String content) instead
+     * Permission: COMMENTOR or EDITOR
+     * Message is persisted immediately via ChannelManager (Auto-Save)
+     */
+    @Deprecated
+    public void addMessage(int entryId, Message message) throws PermissionException {
+        // Delegate to new method
+        addComment(entryId, message.getSender(), message.getContent());
     }
 
     /**
@@ -272,8 +339,8 @@ public class EntryManager {
             throw new PermissionException("You do not have permission to delete comments");
         }
         
-        // Delete from database
-        channelDAO.deleteMessage(message.getId());
+        // Delegate deletion to ChannelManager
+        channelManager.deleteMessage(message.getId());
         
         // Update cached messages
         entry.removeMessage(message);
@@ -284,7 +351,7 @@ public class EntryManager {
      */
     public List<Message> getMessages(Entry entry) {
         if (entry.getChannelId() > 0) {
-            return channelDAO.getMessagesForChannel(entry.getChannelId());
+            return channelManager.getMessagesForChannel(entry.getChannelId());
         }
         return entry.getMessages();
     }
@@ -440,6 +507,72 @@ public class EntryManager {
      */
     public void setCurrentEntry(Entry entry) {
         this.currentEntry = entry;
+    }
+
+    // ==================== UI State ====================
+
+    /**
+     * Gets the UI state for an entry based on user permissions
+     * Business logic: determines view/comment/edit permissions
+     */
+    public EntryFacade.EntryUIState getUIStateForEntry(Entry entry, User user) {
+        UserPermission userPerm = entry.getUserPermissionWithCascade(user);
+        if (userPerm == null || userPerm.getPermission() == null) {
+            return new EntryFacade.EntryUIState(false, false, false);
+        }
+        
+        EPermission permission = userPerm.getPermission();
+        return new EntryFacade.EntryUIState(
+            permission.canView(),
+            permission.canComment(),
+            permission.canEdit()
+        );
+    }
+
+    // ==================== Import/Export ====================
+
+    /**
+     * Imports an entry from a file
+     * Business logic: determines format from extension and imports
+     * @throws IllegalArgumentException for unsupported file formats
+     */
+    public Entry importEntryFromFile(File file) throws Exception {
+        IEntryImporter importer;
+        String fileName = file.getName().toLowerCase();
+        
+        if (fileName.endsWith(".json")) {
+            importer = new EntryJsonImporter();
+        } else if (fileName.endsWith(".xml")) {
+            importer = new EntryXmlImporter();
+        } else {
+            throw new IllegalArgumentException("Unsupported file format. Supported formats: JSON, XML");
+        }
+
+        Entry importedEntry = importer.importEntry(file.getAbsolutePath());
+        if (importedEntry != null) {
+            this.currentEntry = importedEntry;
+        }
+        return importedEntry;
+    }
+
+    /**
+     * Exports an entry to a file
+     * Business logic: determines format from extension and exports
+     * @throws IllegalArgumentException for unsupported file formats
+     */
+    public void exportEntryToFile(Entry entry, File file) throws Exception {
+        IEntryExporter exporter;
+        String fileName = file.getName().toLowerCase();
+        
+        if (fileName.endsWith(".json")) {
+            exporter = new EntryJsonExporter();
+        } else if (fileName.endsWith(".xml")) {
+            exporter = new EntryXmlExporter();
+        } else {
+            throw new IllegalArgumentException("Unsupported file format. Supported formats: JSON, XML");
+        }
+
+        exporter.exportEntry(entry, file.getAbsolutePath());
     }
 
     /**

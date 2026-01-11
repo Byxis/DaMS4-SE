@@ -75,4 +75,18 @@ public class AuthFacade {
     public void setCurrentSession(Session session) {
         this.currentSession = session;
     }
+
+    /**
+     * Checks if a user is currently authenticated
+     */
+    public boolean isAuthenticated() {
+        return AuthManager.getInstance().isAuthenticated();
+    }
+
+    /**
+     * Gets the currently connected user
+     */
+    public User getConnectedUser() {
+        return AuthManager.getInstance().getConnectedUser();
+    }
 }

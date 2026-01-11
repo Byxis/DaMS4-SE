@@ -1,25 +1,14 @@
 package fr.opal.controller;
 
 import fr.opal.type.*;
-import fr.opal.service.SceneManager;
 import fr.opal.facade.AuthFacade;
 import fr.opal.facade.EntryFacade;
 import fr.opal.facade.SessionPropertiesFacade;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
-import fr.opal.service.EntryManager;
-import fr.opal.service.AuthManager;
-import fr.opal.service.IEntryImporter;
-import fr.opal.service.IEntryExporter;
-import fr.opal.service.EntryJsonImporter;
-import fr.opal.service.EntryXmlImporter;
-import fr.opal.service.EntryJsonExporter;
-import fr.opal.service.EntryXmlExporter;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,33 +55,24 @@ public class EntryController {
     @FXML
     private Button addPermissionBtn;
 
-    private EntryManager entryManager;
-    private AuthManager authManager;
     private AuthFacade authFacade;
-    private SceneManager sceneManager;
     private SessionPropertiesFacade sessionPropertiesFacade;
-    private EntryFacade facade;
+    private EntryFacade entryFacade;
     private User currentUser;
     private ContextMenu childrenContextMenu;
-    private Session currentSession;
-    private Profile currentProfile;
 
     /**
      * Initialize controller
      */
     @FXML
     public void initialize() {
-        // Initialize services
-        authManager = AuthManager.getInstance();
+        // Initialize facades
         authFacade = AuthFacade.getInstance();
-        sceneManager = SceneManager.getInstance();
         sessionPropertiesFacade = SessionPropertiesFacade.getInstance();
-        facade = EntryFacade.getInstance();
+        entryFacade = EntryFacade.getInstance();
         
-        if (authManager.isAuthenticated()) {
-            currentUser = authManager.getConnectedUser();
-            currentSession = authFacade.getCurrentSession();
-            currentProfile = authFacade.getProfile(currentSession.getUserId());
+        if (authFacade.isAuthenticated()) {
+            currentUser = authFacade.getConnectedUser();
             
             // Load and apply session settings (theme/font size) using Platform.runLater
             sessionPropertiesFacade.loadSettings(currentUser.getId());
@@ -107,30 +87,12 @@ public class EntryController {
                 }
             });
             
-            entryManager = new EntryManager(currentUser);
-            
             try {
-                // Load the root "Sample Project" entry from DATABASE with Depth-1 context
-                // The mock entry hierarchy is created by DatabaseInitializer at startup
-                List<Entry> rootEntries = entryManager.getAllRootEntries();
-                Entry rootEntry = null;
+                // Load the root "Sample Project" entry from DATABASE via Facade
+                EntryContextDTO rootContext = entryFacade.loadInitialProject("Sample Project");
                 
-                for (Entry entry : rootEntries) {
-                    if ("Sample Project".equals(entry.getTitle())) {
-                        rootEntry = entry;
-                        break;
-                    }
-                }
-                
-                if (rootEntry != null) {
-                    // Load with full context and permissions
-                    EntryContextDTO rootContext = entryManager.getEntry(rootEntry.getId());
-                    entryManager.setCurrentEntry(rootContext.getTargetEntry());
-                    displayEntry(rootContext.getTargetEntry());
-                    
-                    // Update navigation buttons based on context
-                    entryParentRedirBtn.setDisable(rootContext.isRoot());
-                    subDirBtn.setDisable(!rootContext.hasChildren());
+                if (rootContext != null) {
+                    displayEntry(rootContext.getTargetEntry(), rootContext);
                 } else {
                     showErrorDialog("Error", "Sample Project entry not found - ensure database is initialized");
                 }
@@ -151,14 +113,14 @@ public class EntryController {
      * Handles showing subdirectories in a popup menu on hover
      */
     public void showSubDirectoriesOnHover() {
-        Entry current = entryManager.getCurrentEntry();
+        Entry current = entryFacade.getCurrentEntry();
         if (current == null) {
             return;
         }
         
         // Reload current entry with context to get fresh children data
         try {
-            EntryContextDTO context = facade.loadEntry(current.getId());
+            EntryContextDTO context = entryFacade.loadEntry(current.getId());
             if (context == null || !context.hasChildren()) {
                 return;
             }
@@ -193,19 +155,12 @@ public class EntryController {
      */
     private void loadAndDisplayEntry(int entryId) {
         try {
-            EntryContextDTO context = facade.loadEntry(entryId);
+            EntryContextDTO context = entryFacade.loadEntryWithAccessCheck(entryId, currentUser);
             if (context != null) {
-                Entry targetEntry = context.getTargetEntry();
-                
-                // Check if user has access to this entry
-                if (!targetEntry.canUserAccess(currentUser)) {
-                    showErrorDialog("Access Denied", "You do not have permission to view this entry.");
-                    return;
-                }
-                
-                // Display the entry with context loaded for navigation validation
-                displayEntry(targetEntry, context);
+                displayEntry(context.getTargetEntry(), context);
             }
+        } catch (EntryFacade.AccessDeniedException e) {
+            showErrorDialog("Access Denied", e.getMessage());
         } catch (Exception e) {
             showErrorDialog("Error loading entry", e.getMessage());
         }
@@ -228,20 +183,22 @@ public class EntryController {
         }
         
         try {
-            // Check if user has access to this entry using "deny by default" logic
-            if (!entry.canUserAccess(currentUser)) {
+            // Get UI state from facade (permission checks happen in facade/manager)
+            EntryFacade.EntryUIState uiState = entryFacade.getEntryUIState(entry, currentUser);
+            
+            if (!uiState.canView()) {
                 showErrorDialog("Access Denied", "You do not have permission to view this entry.");
                 return;
             }
             
-            entryManager.setCurrentEntry(entry);
+            entryFacade.setCurrentEntry(entry);
             entryTitleField.setText(entry.getTitle());
             entryContent.setText(entry.getContent());
             projectTitle.setText(entry.getRootEntry().getTitle());
             displayComments(entry);
             displayUsersWithPermissions(entry);
             
-            // Update navigation buttons based on context if provided, otherwise use in-memory state
+            // Update navigation buttons based on context if provided
             if (context != null) {
                 entryParentRedirBtn.setDisable(context.getParentEntry() == null);
                 subDirBtn.setDisable(!context.hasChildren());
@@ -250,25 +207,17 @@ public class EntryController {
                 updateNavigationButtons();
             }
             
-            // Get effective permission for UI restrictions
-            UserPermission userPerm = entry.getUserPermissionWithCascade(currentUser);
-            EPermission permission = userPerm.getPermission();
-            boolean isEditor = permission.canEdit();
-            boolean isCommenter = permission.canComment();
+            // Apply UI restrictions based on permissions from facade
+            entryTitleField.setDisable(!uiState.canEdit());
+            entryContent.setDisable(!uiState.canEdit());
+            saveEntryBtn.setDisable(!uiState.canEdit());
             
-            // Disable save button and lock content fields if not editor
-            entryTitleField.setDisable(!isEditor);
-            entryContent.setDisable(!isEditor);
-            saveEntryBtn.setDisable(!isEditor);
+            commentInput.setDisable(!uiState.canComment());
+            addCommentBtn.setDisable(!uiState.canComment());
             
-            // Lock comment input and button for readers
-            commentInput.setDisable(!isCommenter);
-            addCommentBtn.setDisable(!isCommenter);
-            
-            // Lock permission controls - only editors can modify permissions
-            usernameField.setDisable(!isEditor);
-            permissionComboBox.setDisable(!isEditor);
-            addPermissionBtn.setDisable(!isEditor);
+            usernameField.setDisable(!uiState.canEdit());
+            permissionComboBox.setDisable(!uiState.canEdit());
+            addPermissionBtn.setDisable(!uiState.canEdit());
         } catch (Exception e) {
             showErrorDialog("Error displaying entry", e.getMessage());
         }
@@ -332,7 +281,7 @@ public class EntryController {
      * Updates navigation button states
      */
     private void updateNavigationButtons() {
-        Entry current = entryManager.getCurrentEntry();
+        Entry current = entryFacade.getCurrentEntry();
         projectRootRedirBtn.setDisable(true); // Root navigation not yet implemented
         entryParentRedirBtn.setDisable(current == null || current.getParentEntry() == null);
     }
@@ -344,7 +293,7 @@ public class EntryController {
      */
     @FXML
     public void onSaveEntry() {
-        Entry current = entryManager.getCurrentEntry();
+        Entry current = entryFacade.getCurrentEntry();
         if (current == null) {
             showErrorDialog("Error", "No entry selected");
             return;
@@ -354,14 +303,14 @@ public class EntryController {
             String newTitle = entryTitleField.getText();
             String newContent = entryContent.getText();
             
-            // Use the separated updateEntryContent method (EDITOR only)
-            entryManager.updateEntryContent(current.getId(), newTitle, newContent);
+            // Delegate to facade (permission check happens in manager)
+            entryFacade.updateEntryContent(current.getId(), newTitle, newContent, currentUser);
             
             showInfoDialog("Success", "Entry saved successfully");
             
             // Reload the entry to refresh UI with fresh data from database
             loadAndDisplayEntry(current.getId());
-        } catch (EntryManager.PermissionException e) {
+        } catch (EntryFacade.PermissionDeniedException e) {
             showErrorDialog("Permission Denied", e.getMessage());
         } catch (Exception e) {
             showErrorDialog("Error saving entry", e.getMessage());
@@ -381,11 +330,11 @@ public class EntryController {
         Optional<String> result = dialog.showAndWait();
         if (result.isPresent()) {
             try {
-                Entry current = entryManager.getCurrentEntry();
+                Entry current = entryFacade.getCurrentEntry();
                 if (current != null) {
-                    Entry newEntry = entryManager.createNewEntry(result.get(), "", current.getAuthor());
-                    entryManager.attachChildToParent(current, newEntry);
-                    displayEntry(current);
+                    entryFacade.createChildEntry(current, result.get(), "", currentUser);
+                    // Reload current entry to refresh display
+                    loadAndDisplayEntry(current.getId());
                     showInfoDialog("Success", "Entry created successfully");
                 }
             } catch (Exception e) {
@@ -399,7 +348,7 @@ public class EntryController {
      */
     @FXML
     public void onDeleteEntry() {
-        Entry current = entryManager.getCurrentEntry();
+        Entry current = entryFacade.getCurrentEntry();
         if (current != null) {
             Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
             confirmation.setTitle("Confirm Delete");
@@ -409,10 +358,10 @@ public class EntryController {
             Optional<ButtonType> result = confirmation.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK) {
                 try {
-                    entryManager.removeEntry(current.getId());
                     Entry parent = current.getParentEntry();
+                    entryFacade.deleteEntry(current.getId());
                     if (parent != null) {
-                        displayEntry(parent);
+                        loadAndDisplayEntry(parent.getId());
                     }
                     showInfoDialog("Success", "Entry deleted successfully");
                 } catch (Exception e) {
@@ -428,31 +377,23 @@ public class EntryController {
      */
     @FXML
     public void onAddComment() {
-        Entry current = entryManager.getCurrentEntry();
+        Entry current = entryFacade.getCurrentEntry();
         if (current == null) {
             showErrorDialog("Error", "No entry selected");
             return;
         }
         
-        String commentText = commentInput.getText().trim();
-        if (commentText.isEmpty()) {
-            showErrorDialog("Error", "Comment cannot be empty");
-            return;
-        }
+        String commentText = commentInput.getText();
         
         try {
-            // Create message for the entry's channel
-            Message message = new Message(current.getChannelId(), currentUser, commentText);
-            
-            // Call the new addMessage method with permission checks (Auto-Save)
-            // This will throw PermissionException if user is not COMMENTOR or EDITOR
-            entryManager.addMessage(current.getId(), message);
+            // Delegate all validation, message creation, and permission checks to facade
+            entryFacade.addComment(current, currentUser, commentText);
             
             // Clear input and refresh display
             commentInput.clear();
             displayComments(current);
             showInfoDialog("Success", "Comment added successfully");
-        } catch (EntryManager.PermissionException e) {
+        } catch (EntryFacade.PermissionDeniedException e) {
             showErrorDialog("Permission Denied", e.getMessage());
         } catch (Exception e) {
             showErrorDialog("Error adding comment", e.getMessage());
@@ -466,7 +407,7 @@ public class EntryController {
      */
     @FXML
     public void onAddPermission() {
-        Entry current = entryManager.getCurrentEntry();
+        Entry current = entryFacade.getCurrentEntry();
         String username = usernameField.getText();
         EPermission permission = permissionComboBox.getValue();
         
@@ -475,23 +416,15 @@ public class EntryController {
             return;
         }
         
-        if (username == null || username.trim().isEmpty()) {
-            showErrorDialog("Error", "Please enter a username");
-            return;
-        }
-        
-        if (permission == null) {
-            showErrorDialog("Error", "Please select a permission level");
-            return;
-        }
-        
         try {
-            // Permission check is now inside setUserPermissionByUsername (EDITOR only)
-            entryManager.setUserPermissionByUsername(current, username, permission);
+            // Delegate all validation and permission setting to facade
+            entryFacade.setUserPermission(current, username, permission, currentUser);
             usernameField.clear();
             permissionComboBox.setValue(EPermission.READER);
             displayUsersWithPermissions(current);
             showInfoDialog("Success", "Permission added for user: " + username);
+        } catch (EntryFacade.PermissionDeniedException e) {
+            showErrorDialog("Permission Denied", e.getMessage());
         } catch (Exception e) {
             showErrorDialog("Error adding permission", e.getMessage());
         }
@@ -503,16 +436,12 @@ public class EntryController {
     @FXML
     public void onNavigateToParent() {
         try {
-            EntryContextDTO parentContext = entryManager.navigateToParent();
+            EntryContextDTO parentContext = entryFacade.navigateToParent(currentUser);
             if (parentContext != null) {
                 Entry parent = parentContext.getTargetEntry();
-                displayEntry(parent);
-                
-                // Update navigation buttons based on new context
-                entryParentRedirBtn.setDisable(parentContext.isRoot());
-                subDirBtn.setDisable(!parentContext.hasChildren());
+                displayEntry(parent, parentContext);
             }
-        } catch (EntryManager.PermissionException e) {
+        } catch (EntryFacade.PermissionDeniedException e) {
             showErrorDialog("Permission Denied", e.getMessage());
         } catch (Exception e) {
             showErrorDialog("Error navigating", e.getMessage());
@@ -544,21 +473,13 @@ public class EntryController {
         File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
             try {
-                IEntryImporter importer;
-                if (selectedFile.getName().endsWith(".json")) {
-                    importer = new EntryJsonImporter();
-                } else if (selectedFile.getName().endsWith(".xml")) {
-                    importer = new EntryXmlImporter();
-                } else {
-                    throw new IllegalArgumentException("Unsupported file format");
-                }
-
-                Entry importedEntry = importer.importEntry(selectedFile.getAbsolutePath());
+                Entry importedEntry = entryFacade.importEntry(selectedFile);
                 if (importedEntry != null) {
-                    entryManager.setCurrentEntry(importedEntry);
                     displayEntry(importedEntry);
                     showInfoDialog("Success", "Entry imported successfully");
                 }
+            } catch (IllegalArgumentException e) {
+                showErrorDialog("Error", e.getMessage());
             } catch (Exception e) {
                 showErrorDialog("Error importing entry", e.getMessage());
             }
@@ -570,7 +491,7 @@ public class EntryController {
      */
     @FXML
     public void onExport() {
-        Entry current = entryManager.getCurrentEntry();
+        Entry current = entryFacade.getCurrentEntry();
         if (current == null) {
             showErrorDialog("Error", "No entry selected to export");
             return;
@@ -587,17 +508,10 @@ public class EntryController {
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try {
-                IEntryExporter exporter;
-                if (selectedFile.getName().endsWith(".json")) {
-                    exporter = new EntryJsonExporter();
-                } else if (selectedFile.getName().endsWith(".xml")) {
-                    exporter = new EntryXmlExporter();
-                } else {
-                    throw new IllegalArgumentException("Unsupported file format");
-                }
-
-                exporter.exportEntry(current, selectedFile.getAbsolutePath());
+                entryFacade.exportEntry(current, selectedFile);
                 showInfoDialog("Success", "Entry exported successfully to " + selectedFile.getAbsolutePath());
+            } catch (IllegalArgumentException e) {
+                showErrorDialog("Error", e.getMessage());
             } catch (Exception e) {
                 showErrorDialog("Error exporting entry", e.getMessage());
             }
