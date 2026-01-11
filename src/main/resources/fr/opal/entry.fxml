@@ -53,7 +53,7 @@
                   <Button fx:id="deleteEntryBtn" mnemonicParsing="false" onAction="#onDeleteEntry" styleClass="entry-action-button" text="Delete Entry" />
                   <HBox HBox.hgrow="ALWAYS" />
                   <Button fx:id="projectRootRedirBtn" mnemonicParsing="false" onAction="#onNavigateToRoot" styleClass="entry-nav-button" text="📍 Root" />
-                  <Button fx:id="entryParentRedirBtn" mnemonicParsing="false" onAction="#onNavigateToParent" styleClass="entry-nav-button" text="⬆️ Parent" />
+                  <Button fx:id="entryParentRedirBtn" mnemonicParsing="false" onAction="#onNavigateToParent" styleClass="entry-nav-button" text="⬆ Parent" />
                   <Button fx:id="subDirBtn" mnemonicParsing="false" onAction="#onShowSubDirectories" styleClass="entry-nav-button" text="📂 Children" />
                </children>
             </HBox>
