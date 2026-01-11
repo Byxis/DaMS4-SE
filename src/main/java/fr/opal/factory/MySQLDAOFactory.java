@@ -1,7 +1,6 @@
 package fr.opal.factory;
 
 import fr.opal.dao.*;
-import fr.opal.db.DatabaseInitializer;
 import fr.opal.db.DatabaseManager;
 import fr.opal.type.Entry;
 import fr.opal.type.User;
@@ -14,12 +13,10 @@ import java.util.logging.Logger;
 public class MySQLDAOFactory extends AbstractDAOFactory
 {
     private final Connection connection;
-    private static final Logger LOGGER = Logger.getLogger(MySQLDAOFactory.class.getName());
 
     public MySQLDAOFactory()
     {
         this.connection = DatabaseManager.getInstance().getConnection();
-        DatabaseInitializer.initialize(this.connection);
     }
 
     @Override public UserDAO createUserDAO()
@@ -50,5 +47,10 @@ public class MySQLDAOFactory extends AbstractDAOFactory
     @Override public Entry createEntry(int id, String title, String content, User author)
     {
         return new Entry(id, title, content, author);
+    }
+
+    @Override public ChannelDAO createChannelDAO()
+    {
+        return new MySQLChannelDAO(connection);
     }
 }

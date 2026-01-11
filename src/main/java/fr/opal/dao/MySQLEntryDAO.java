@@ -8,11 +8,12 @@ import java.util.List;
 
 /**
  * MySQL implementation of EntryDAO
- * Follows the same pattern as MySQLUserDAO from main branch
+ * Uses unified channel architecture for comments (messages).
  */
 public class MySQLEntryDAO extends EntryDAO {
     private Connection conn;
     private MySQLUserDAO userDAO;
+    private MySQLChannelDAO channelDAO;
 
     /**
      * Constructor with database connection (must be managed by factory)
@@ -20,6 +21,7 @@ public class MySQLEntryDAO extends EntryDAO {
     public MySQLEntryDAO(Connection conn) {
         this.conn = conn;
         this.userDAO = new MySQLUserDAO(conn);
+        this.channelDAO = new MySQLChannelDAO(conn);
     }
 
     /**
@@ -30,8 +32,10 @@ public class MySQLEntryDAO extends EntryDAO {
     public Entry getEntryById(int id) {
         Entry entry = loadEntryBasicData(id);
         if (entry != null) {
-            // Eagerly load all data for this entry
-            entry.setComments(loadComments(id));
+            // Eagerly load messages from unified channel
+            if (entry.getChannelId() > 0) {
+                entry.setMessages(channelDAO.getMessagesForChannel(entry.getChannelId()));
+            }
             entry.setPermissionManager(loadPermissions(id));
             
             // Load parent entry with permissions (Depth-1 Upward)
@@ -50,6 +54,13 @@ public class MySQLEntryDAO extends EntryDAO {
             List<Entry> children = getChildEntries(id);
             for (Entry child : children) {
                 child.setPermissionManager(loadPermissions(child.getId()));
+                // IMPORTANT: Set parent reference for permission cascading
+                try {
+                    child.setParentEntry(entry);
+                } catch (Entry.CircularDependencyException e) {
+                    // This shouldn't happen when loading from database
+                    e.printStackTrace();
+                }
             }
             entry.setChildEntries((ArrayList<Entry>) children);
         }
@@ -58,6 +69,7 @@ public class MySQLEntryDAO extends EntryDAO {
 
     /**
      * Saves an entry to the database (updates existing)
+     * Note: Messages are managed separately via ChannelDAO
      */
     @Override
     public void saveEntry(Entry entry) {
@@ -76,9 +88,6 @@ public class MySQLEntryDAO extends EntryDAO {
             ps.setInt(4, entry.getId());
             ps.executeUpdate();
             
-            // Update comments
-            saveComments(entry);
-            
             // Update permissions
             savePermissions(entry);
             
@@ -88,11 +97,15 @@ public class MySQLEntryDAO extends EntryDAO {
     }
 
     /**
-     * Creates a new entry in the database
+     * Creates a new entry in the database with its own channel for comments.
      */
     @Override
     public int createEntry(Entry entry) {
-        String sql = "INSERT INTO entries(title, content, parent_id, author_id) VALUES (?, ?, ?, ?)";
+        // First create a channel for this entry's comments
+        int channelId = channelDAO.createChannel();
+        entry.setChannelId(channelId);
+        
+        String sql = "INSERT INTO entries(title, content, parent_id, author_id, channel_id) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, entry.getTitle());
             ps.setString(2, entry.getContent());
@@ -108,15 +121,13 @@ public class MySQLEntryDAO extends EntryDAO {
                 throw new DataAccessException("Entry author is missing or has invalid ID", null);
             }
             ps.setInt(4, entry.getAuthor().getId());
+            ps.setInt(5, channelId);
             ps.executeUpdate();
             
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) {
                     int id = rs.getInt(1);
                     entry.setId(id);
-                    
-                    // Save comments if any
-                    saveComments(entry);
                     
                     // Save permissions if any
                     savePermissions(entry);
@@ -125,6 +136,8 @@ public class MySQLEntryDAO extends EntryDAO {
                 }
             }
         } catch (SQLException e) {
+            // Clean up channel if entry creation fails
+            channelDAO.deleteChannel(channelId);
             throw new DataAccessException("Error creating entry: " + entry.getTitle(), e);
         }
         return 0;
@@ -150,7 +163,7 @@ public class MySQLEntryDAO extends EntryDAO {
     @Override
     public List<Entry> getRootEntries() {
         List<Entry> entries = new ArrayList<>();
-        String sql = "SELECT id, title, content, parent_id, author_id, creation_date, last_modified " +
+        String sql = "SELECT id, title, content, parent_id, author_id, channel_id, creation_date, last_modified " +
                      "FROM entries WHERE parent_id IS NULL";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ResultSet rs = ps.executeQuery();
@@ -188,7 +201,7 @@ public class MySQLEntryDAO extends EntryDAO {
      * Loads basic entry data from database
      */
     private Entry loadEntryBasicData(int id) {
-        String sql = "SELECT id, title, content, parent_id, author_id, creation_date, last_modified " +
+        String sql = "SELECT id, title, content, parent_id, author_id, channel_id, creation_date, last_modified " +
                      "FROM entries WHERE id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -211,6 +224,12 @@ public class MySQLEntryDAO extends EntryDAO {
         entry.setTitle(rs.getString("title"));
         entry.setContent(rs.getString("content"));
         
+        // Load channel ID for unified messaging
+        int channelId = rs.getInt("channel_id");
+        if (!rs.wasNull()) {
+            entry.setChannelId(channelId);
+        }
+        
         // Load author using database ID (not username)
         int authorId = rs.getInt("author_id");
         User author = userDAO.getUserByDatabaseId(authorId);
@@ -222,10 +241,10 @@ public class MySQLEntryDAO extends EntryDAO {
         metadata.setLastModified(rs.getTimestamp("last_modified"));
         entry.setMetadata(metadata);
         
-        // Load parent entry if exists (only basic data to avoid deep recursion)
+        // Load parent entry if exists (recursively load full parent chain for permission cascading)
         int parentId = rs.getInt("parent_id");
         if (!rs.wasNull()) {
-            Entry parent = loadEntryBasicData(parentId);
+            Entry parent = loadParentChainWithPermissions(parentId);
             try {
                 entry.setParentEntry(parent);
             } catch (Entry.CircularDependencyException e) {
@@ -238,6 +257,102 @@ public class MySQLEntryDAO extends EntryDAO {
     }
 
     /**
+     * Recursively loads parent entry with permissions, stopping permission loading at the first entry that has permissions.
+     * However, parent references are ALWAYS set for navigation purposes.
+     * This implements "permission boundary" - the first ancestor with permissions becomes the source of truth.
+     */
+    private Entry loadParentChainWithPermissions(int parentId) {
+        String sql = "SELECT id, title, content, parent_id, author_id, channel_id, creation_date, last_modified " +
+                     "FROM entries WHERE id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, parentId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                Entry parent = new Entry();
+                parent.setId(rs.getInt("id"));
+                parent.setTitle(rs.getString("title"));
+                parent.setContent(rs.getString("content"));
+                
+                // Load channel ID
+                int channelId = rs.getInt("channel_id");
+                if (!rs.wasNull()) {
+                    parent.setChannelId(channelId);
+                }
+                
+                // Load author
+                int authorId = rs.getInt("author_id");
+                User author = userDAO.getUserByDatabaseId(authorId);
+                parent.setAuthor(author);
+                
+                // Load permissions for this parent
+                EntryPermissionManager permissions = loadPermissions(parentId);
+                parent.setPermissionManager(permissions);
+                
+                // ALWAYS load the parent reference for navigation, but only continue loading
+                // permissions up the chain if this entry has NO permissions (permission boundary).
+                int grandparentId = rs.getInt("parent_id");
+                if (!rs.wasNull()) {
+                    if (!permissions.hasAnyPermissions()) {
+                        // No permissions here, continue loading full chain with permissions
+                        Entry grandparent = loadParentChainWithPermissions(grandparentId);
+                        try {
+                            parent.setParentEntry(grandparent);
+                        } catch (Entry.CircularDependencyException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        // Permission boundary reached - still load parent for navigation but minimal
+                        Entry grandparent = loadParentMinimal(grandparentId);
+                        try {
+                            parent.setParentEntry(grandparent);
+                        } catch (Entry.CircularDependencyException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                
+                return parent;
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error loading parent chain: " + parentId, e);
+        }
+        return null;
+    }
+
+    /**
+     * Loads minimal parent entry (just id and title) for navigation purposes only.
+     * Used when we've already hit a permission boundary but still need parent references.
+     */
+    private Entry loadParentMinimal(int parentId) {
+        String sql = "SELECT id, title, parent_id FROM entries WHERE id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, parentId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                Entry parent = new Entry();
+                parent.setId(rs.getInt("id"));
+                parent.setTitle(rs.getString("title"));
+                
+                // Continue loading minimal parent chain for navigation
+                int grandparentId = rs.getInt("parent_id");
+                if (!rs.wasNull()) {
+                    Entry grandparent = loadParentMinimal(grandparentId);
+                    try {
+                        parent.setParentEntry(grandparent);
+                    } catch (Entry.CircularDependencyException e) {
+                        e.printStackTrace();
+                    }
+                }
+                
+                return parent;
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Error loading minimal parent: " + parentId, e);
+        }
+        return null;
+    }
+
+    /**
      * Helper method to build minimal Entry object from ResultSet (for lazy loading)
      * Only loads: id, title
      * Permissions are loaded separately in getEntryById()
@@ -247,68 +362,6 @@ public class MySQLEntryDAO extends EntryDAO {
         entry.setId(rs.getInt("id"));
         entry.setTitle(rs.getString("title"));
         return entry;
-    }
-
-    /**
-     * Load comments for an entry
-     */
-    private List<Comment> loadComments(int entryId) {
-        List<Comment> comments = new ArrayList<>();
-        String sql = "SELECT id, content, author_id, created_date FROM comments WHERE entry_id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, entryId);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                String content = rs.getString("content");
-                int authorId = rs.getInt("author_id");
-                // Use getUserByDatabaseId (integer ID) not getUserById (username)
-                User author = userDAO.getUserByDatabaseId(authorId);
-                
-                // Skip comments with invalid/missing authors (data integrity issue)
-                if (author == null) {
-                    System.err.println("Warning: Comment ID " + id + " has invalid author_id: " + authorId);
-                    continue;
-                }
-                
-                java.util.Date createdDate = new java.util.Date(rs.getTimestamp("created_date").getTime());
-                
-                Comment comment = new Comment(id, content, author, createdDate);
-                comments.add(comment);
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Error loading comments for entry: " + entryId, e);
-        }
-        return comments;
-    }
-
-    /**
-     * Save comments for an entry
-     */
-    private void saveComments(Entry entry) {
-        if (entry.getComments() == null) return;
-        
-        // Delete existing comments
-        String deleteSql = "DELETE FROM comments WHERE entry_id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(deleteSql)) {
-            ps.setInt(1, entry.getId());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Error deleting comments for entry: " + entry.getId(), e);
-        }
-        
-        // Insert new comments
-        String insertSql = "INSERT INTO comments(entry_id, content, author_id) VALUES (?, ?, ?)";
-        try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
-            for (Comment comment : entry.getComments()) {
-                ps.setInt(1, entry.getId());
-                ps.setString(2, comment.getContent());
-                ps.setInt(3, comment.getAuthor().getId());
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Error saving comments for entry: " + entry.getId(), e);
-        }
     }
 
     /**

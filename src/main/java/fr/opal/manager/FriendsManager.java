@@ -274,4 +274,15 @@ public class FriendsManager {
         pendingFriendRequests.removeIf(user -> user.getId() == requesterId);
         return true;
     }
+
+    /**
+     * Gets the channel ID for DMs between two friends.
+     *
+     * @param user1Id The ID of the first user
+     * @param user2Id The ID of the second user
+     * @return The channel ID for DMs, or 0 if friendship doesn't exist or isn't accepted
+     */
+    public int getChannelIdForFriendship(int user1Id, int user2Id) {
+        return friendsDAO.getChannelIdForFriendship(user1Id, user2Id);
+    }
 }

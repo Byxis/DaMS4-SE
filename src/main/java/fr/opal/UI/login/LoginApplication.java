@@ -1,6 +1,8 @@
 package fr.opal.UI.login;
 
 import fr.opal.service.SceneManager;
+import fr.opal.db.DatabaseManager;
+import fr.opal.db.DatabaseInitializer;
 import javafx.application.Application;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
@@ -20,6 +22,14 @@ public class LoginApplication extends Application {
      */
     @Override
     public void start(Stage stage) throws IOException {
+        // Ensure database schema is up to date (adds missing columns for unified channel architecture)
+        try {
+            java.sql.Connection conn = DatabaseManager.getInstance().getConnection();
+            DatabaseInitializer.ensureSchemaUpToDate(conn);
+        } catch (Exception e) {
+            System.err.println("Warning: Failed to update database schema: " + e.getMessage());
+        }
+        
         SceneManager sceneManager = SceneManager.getInstance();
         sceneManager.initialize(stage);
 

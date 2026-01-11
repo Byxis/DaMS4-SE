@@ -1,5 +1,6 @@
 package fr.opal.factory;
 
+import fr.opal.dao.ChannelDAO;
 import fr.opal.dao.EntryDAO;
 import fr.opal.dao.FriendsDAO;
 import fr.opal.dao.SessionDAO;
@@ -46,4 +47,5 @@ public abstract class AbstractDAOFactory
     public abstract EntryDAO createEntryDAO();
     public abstract Entry createEntry(String title, String content, User author);
     public abstract Entry createEntry(int id, String title, String content, User author);
+    public abstract ChannelDAO createChannelDAO();
 }
