@@ -138,19 +138,13 @@ public class SessionManager {
     public void applyTheme(Parent root) {
         if (root == null) return;
 
-        // Remove existing theme classes
         root.getStyleClass().removeAll("light", "dark");
         
-        // Add current palette class
         String paletteClass = userSessionSettings.getStylePalette().getCssClass();
         root.getStyleClass().add(paletteClass);
 
-        // Apply accent color as CSS variable via inline style
-        String accentColor = userSessionSettings.getAccentColor().getHexCode();
-        String currentStyle = root.getStyle() != null ? root.getStyle() : "";
-        // Remove old accent color if present
-        currentStyle = currentStyle.replaceAll("-fx-accent-color:\\s*#[0-9A-Fa-f]+;?", "");
-        root.setStyle(currentStyle + "-fx-accent-color: " + accentColor + ";");
+        String newStyle = fr.opal.util.ThemeHelper.updateStyle(root.getStyle(), userSessionSettings);
+        root.setStyle(newStyle);
     }
 
     /**

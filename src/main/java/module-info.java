@@ -1,10 +1,11 @@
-module fr.opal {
+module fr.opal
+{
     requires javafx.controls;
+    requires transitive javafx.graphics;
     requires javafx.fxml;
     requires java.sql;
     requires java.logging;
 
-    opens fr.opal to javafx.fxml;
     opens fr.opal.UI to javafx.fxml;
     opens fr.opal.UI.login to javafx.fxml;
     opens fr.opal.controller to javafx.fxml;
@@ -17,7 +18,6 @@ module fr.opal {
     opens fr.opal.db to javafx.fxml;
     opens fr.opal.exception to javafx.fxml;
 
-    exports fr.opal.UI;
     exports fr.opal.UI.login;
     exports fr.opal.controller;
     exports fr.opal.dao;

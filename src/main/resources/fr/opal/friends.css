@@ -1,0 +1,77 @@
+/* ========================================
+   FRIENDS & CONNECTIONS - SPECIFIC STYLES
+   Note: Most styling uses style.css classes
+   ======================================== */
+
+/* Transparent ScrollPane and Container */
+.transparent-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.transparent-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.transparent-container {
+    -fx-background-color: transparent;
+}
+
+/* Section Container - Grouped content areas */
+.section-container {
+    -fx-background-color: -fx-theme-bg-secondary;
+    -fx-border-color: -fx-theme-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 15;
+}
+
+/* Friend/Result Item - Individual user cards */
+.friend-item,
+.search-result-item {
+    -fx-background-color: -fx-theme-bg;
+    -fx-border-color: -fx-theme-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-padding: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 5, 0, 0, 2);
+}
+
+.friend-item:hover,
+.search-result-item:hover {
+    -fx-background-color: -fx-theme-bg-secondary;
+}
+
+.search-result-item {
+    -fx-padding: 15;
+}
+
+/* Danger Button - Minimal override for destructive actions */
+.danger-button {
+    -fx-background-color: #e74c3c;
+}
+
+.danger-button:hover {
+    -fx-background-color: #c0392b;
+}
+
+/* Status Labels - Relationship indicators */
+.friend-label {
+    -fx-text-fill: #27ae60;
+    -fx-font-weight: bold;
+    -fx-padding: 8 15 8 15;
+}
+
+.pending-label {
+    -fx-text-fill: #f39c12;
+    -fx-font-weight: bold;
+    -fx-padding: 8 15 8 15;
+}
+
+.blocked-label {
+    -fx-text-fill: #e74c3c;
+    -fx-font-weight: bold;
+    -fx-padding: 8 15 8 15;
+}

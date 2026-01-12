@@ -5,46 +5,46 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane fx:id="rootPane" prefHeight="500.0" prefWidth="600.0" stylesheets="@style.css, @auth.css" styleClass="main-container" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.AuthController">
+<StackPane fx:id="rootPane" prefHeight="500.0" prefWidth="600.0" stylesheets="@style.css, @auth.css" styleClass="main-container" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.AuthController">
    <children>
-      <VBox alignment="CENTER" layoutX="186.0" layoutY="30.0" prefWidth="228.0" spacing="10">
+      <VBox alignment="CENTER" maxWidth="350.0" prefWidth="350.0" spacing="15">
          <children>
             <Label styleClass="title-large" text="Register" />
 
-            <Hyperlink onAction="#switchToLogin" prefHeight="24.0" prefWidth="186.0" text="Sign in to your account">
+            <Hyperlink onAction="#switchToLogin" text="Sign in to your account">
                <graphic>
                   <Label text="Already?" />
                </graphic>
             </Hyperlink>
 
-            <VBox prefWidth="228.0" spacing="5">
+            <VBox spacing="5" alignment="CENTER_LEFT">
                <children>
                   <Label text="Username *" />
-                  <TextField fx:id="usernameField" prefHeight="34.0" promptText="Username" />
+                  <TextField fx:id="usernameField" prefHeight="40.0" promptText="Username" />
                </children>
             </VBox>
 
-            <VBox prefWidth="228.0" spacing="5">
+            <VBox spacing="5" alignment="CENTER_LEFT">
                <children>
                   <Label text="Password *" />
-                  <PasswordField fx:id="passwordField" prefHeight="34.0" promptText="Password" />
+                  <PasswordField fx:id="passwordField" prefHeight="40.0" promptText="Password" />
                </children>
             </VBox>
 
-            <VBox prefWidth="228.0" spacing="5">
+            <VBox spacing="5" alignment="CENTER_LEFT">
                <children>
                   <Label text="Confirm Password *" />
-                  <PasswordField fx:id="confirmPasswordField" prefHeight="34.0" promptText="Confirm password" />
+                  <PasswordField fx:id="confirmPasswordField" prefHeight="40.0" promptText="Confirm password" />
                </children>
             </VBox>
 
             <Label fx:id="messageLabel" text="" wrapText="true" />
 
-            <Button mnemonicParsing="false" onAction="#register" prefHeight="40.0" prefWidth="228.0" styleClass="primary-button" text="Create Account" />
+            <Button mnemonicParsing="false" onAction="#register" prefHeight="45.0" maxWidth="Infinity" styleClass="primary-button" text="Create Account" />
          </children>
       </VBox>
    </children>
-</AnchorPane>
+</StackPane>
