@@ -1,4 +1,7 @@
-package fr.opal.type;
+package fr.opal.manager;
+
+import fr.opal.type.User;
+import fr.opal.type.UserPermission;
 
 import java.util.ArrayList;
 import java.util.List;

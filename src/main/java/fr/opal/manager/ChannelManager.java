@@ -1,4 +1,4 @@
-package fr.opal.service;
+package fr.opal.manager;
 
 import fr.opal.dao.ChannelDAO;
 import fr.opal.factory.AbstractDAOFactory;

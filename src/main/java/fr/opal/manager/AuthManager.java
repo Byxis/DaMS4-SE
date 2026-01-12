@@ -1,4 +1,4 @@
-package fr.opal.service;
+package fr.opal.manager;
 
 import fr.opal.factory.AbstractDAOFactory;
 import fr.opal.type.Permission;

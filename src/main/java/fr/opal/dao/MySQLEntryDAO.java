@@ -1,6 +1,7 @@
 package fr.opal.dao;
 
 import fr.opal.exception.DataAccessException;
+import fr.opal.manager.EntryPermissionManager;
 import fr.opal.type.*;
 import java.sql.*;
 import java.util.ArrayList;

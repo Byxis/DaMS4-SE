@@ -1,11 +1,10 @@
-package fr.opal.service;
+package fr.opal.manager;
 
 import fr.opal.controller.SessionPropertiesController;
 import fr.opal.facade.SessionPropertiesFacade;
 import fr.opal.type.CachedScene;
 import fr.opal.type.Profile;
 import fr.opal.type.Session;
-import fr.opal.util.ColorUtil;
 import fr.opal.util.StageHelper;
 import java.io.IOException;
 import java.util.HashMap;

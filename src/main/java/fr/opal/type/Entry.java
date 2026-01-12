@@ -1,5 +1,7 @@
 package fr.opal.type;
 
+import fr.opal.manager.EntryPermissionManager;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;

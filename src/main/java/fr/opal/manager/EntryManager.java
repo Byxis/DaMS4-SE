@@ -1,5 +1,6 @@
-package fr.opal.service;
+package fr.opal.manager;
 
+import fr.opal.service.*;
 import fr.opal.type.Entry;
 import fr.opal.type.User;
 import fr.opal.type.Message;

@@ -1,6 +1,6 @@
 package fr.opal.UI.login;
 
-import fr.opal.service.SceneManager;
+import fr.opal.manager.SceneManager;
 import fr.opal.db.DatabaseManager;
 import fr.opal.db.DatabaseInitializer;
 import javafx.application.Application;

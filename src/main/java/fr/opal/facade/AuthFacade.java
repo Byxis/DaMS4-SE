@@ -1,6 +1,6 @@
 package fr.opal.facade;
 
-import fr.opal.service.AuthManager;
+import fr.opal.manager.AuthManager;
 import fr.opal.type.Profile;
 import fr.opal.type.Session;
 import fr.opal.type.User;

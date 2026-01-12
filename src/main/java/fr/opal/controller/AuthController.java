@@ -1,7 +1,7 @@
 package fr.opal.controller;
 
 import fr.opal.facade.AuthFacade;
-import fr.opal.service.SceneManager;
+import fr.opal.manager.SceneManager;
 import fr.opal.type.Profile;
 import fr.opal.type.Session;
 import fr.opal.type.User;

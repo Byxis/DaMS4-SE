@@ -2,7 +2,7 @@ package fr.opal.controller;
 
 import fr.opal.facade.AuthFacade;
 import fr.opal.facade.SessionPropertiesFacade;
-import fr.opal.service.SceneManager;
+import fr.opal.manager.SceneManager;
 import fr.opal.type.Profile;
 import fr.opal.type.Session;
 import java.io.IOException;
