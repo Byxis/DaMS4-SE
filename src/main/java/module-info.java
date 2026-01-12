@@ -15,7 +15,6 @@ module fr.opal {
     opens fr.opal.type to javafx.fxml;
 
     exports fr.opal.UI.login;
-    exports fr.opal.controller;
     exports fr.opal.dao;
     exports fr.opal.facade;
     exports fr.opal.factory;
