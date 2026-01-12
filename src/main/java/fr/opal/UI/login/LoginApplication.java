@@ -22,7 +22,6 @@ public class LoginApplication extends Application {
      */
     @Override
     public void start(Stage stage) throws IOException {
-        // Ensure database schema is up to date (adds missing columns for unified channel architecture)
         try {
             java.sql.Connection conn = DatabaseManager.getInstance().getConnection();
             DatabaseInitializer.ensureSchemaUpToDate(conn);
