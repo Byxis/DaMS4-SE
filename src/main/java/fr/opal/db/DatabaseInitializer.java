@@ -213,18 +213,6 @@ public class DatabaseInitializer {
                 }
             }
 
-            // Add EDITOR permission to "lez" user on root entry
-            String permissionSql = "INSERT INTO entry_permissions(entry_id, username, permission) VALUES (?, ?, ?)";
-            try (PreparedStatement ps = connection.prepareStatement(permissionSql)) {
-                ps.setInt(1, rootEntryId);
-                ps.setString(2, "lez");
-                ps.setString(3, "EDITOR");
-                ps.executeUpdate();
-            }
-
-            LOGGER.info("Successfully created mock entry hierarchy with 6 entries");
-            LOGGER.info("Root entry ID: " + rootEntryId + ", User 'lez' has EDITOR permission");
-
         } catch (SQLException e) {
             LOGGER.severe("Error creating mock entry hierarchy: " + e.getMessage());
             throw new RuntimeException("Failed to create mock entry hierarchy", e);
