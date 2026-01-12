@@ -1,18 +1,18 @@
-package fr.opal.service;
+package fr.opal.manager;
 
 import fr.opal.factory.AbstractDAOFactory;
 import fr.opal.type.Permission;
 import fr.opal.type.Profile;
 import fr.opal.type.Session;
 import fr.opal.type.User;
-
 import java.util.*;
+
 
 /**
  * Manager for authentication and authorization
  */
-public class AuthManager {
-
+public class AuthManager
+{
     private static AuthManager instance;
     private User connectedUser;
     private Map<String, Session> activeSessions = new HashMap<>();
@@ -21,14 +21,15 @@ public class AuthManager {
     /**
      * Private constructor for singleton pattern
      */
-    private AuthManager() {
-    }
+    private AuthManager() {}
 
     /**
      * Get singleton instance
      */
-    public static AuthManager getInstance() {
-        if (instance == null) {
+    public static AuthManager getInstance()
+    {
+        if (instance == null)
+        {
             instance = new AuthManager();
         }
         return instance;
@@ -38,31 +39,36 @@ public class AuthManager {
      * Authenticates a user with username and password
      * Returns a Session if authentication succeeds, null otherwise
      */
-    public Session authenticate(String username, String password) {
+    public Session authenticate(String username, String password)
+    {
         AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
-        
-        if (connectedUsers.containsKey(username)) {
+
+        if (connectedUsers.containsKey(username))
+        {
             User user = connectedUsers.get(username);
-            if (user != null && user.verifyPassword(password)) {
+            if (user != null && user.verifyPassword(password))
+            {
                 connectedUser = user;
                 return createSession(username);
             }
         }
-        
+
         User user = factory.createUserDAO().getUserById(username);
-        if (user != null && user.verifyPassword(password)) {
+        if (user != null && user.verifyPassword(password))
+        {
             connectedUser = user;
             connectedUsers.put(username, user);
             return createSession(username);
         }
-        
+
         return null;
     }
 
     /**
      * Creates a new session for the authenticated user
      */
-    private Session createSession(String username) {
+    private Session createSession(String username)
+    {
         String sessionId = UUID.randomUUID().toString();
         Session session = new Session(sessionId, new Date(), username, connectedUser.getId());
         activeSessions.put(sessionId, session);
@@ -72,8 +78,10 @@ public class AuthManager {
     /**
      * Terminates a user session
      */
-    public void terminateSession(String sessionId) {
-        if (activeSessions.containsKey(sessionId)) {
+    public void terminateSession(String sessionId)
+    {
+        if (activeSessions.containsKey(sessionId))
+        {
             activeSessions.remove(sessionId);
             connectedUser = null;
             connectedUsers.clear();
@@ -83,14 +91,16 @@ public class AuthManager {
     /**
      * Registers a new user
      */
-    public User register(String username, String password) {
+    public User register(String username, String password)
+    {
         AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
-        
+
         User existingUser = factory.createUserDAO().getUserById(username);
-        if (existingUser != null) {
+        if (existingUser != null)
+        {
             return null;
         }
-        
+
         User newUser = factory.createUserDAO().createUser(username, password);
         return newUser;
     }
@@ -98,7 +108,8 @@ public class AuthManager {
     /**
      * Retrieves user profile
      */
-    public Profile getProfile(int userId) {
+    public Profile getProfile(int userId)
+    {
         AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         return factory.createUserDAO().getProfile(userId);
     }
@@ -106,7 +117,8 @@ public class AuthManager {
     /**
      * Updates user profile information
      */
-    public void updateProfile(int userId, Profile profile) {
+    public void updateProfile(int userId, Profile profile)
+    {
         AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         factory.createUserDAO().updateProfile(userId, profile);
     }
@@ -114,7 +126,8 @@ public class AuthManager {
     /**
      * Retrieves list of permissions for a user
      */
-    public List<Permission> listPermissions(int userId) {
+    public List<Permission> listPermissions(int userId)
+    {
         AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         return factory.createUserDAO().listPermissions(userId);
     }
@@ -122,7 +135,8 @@ public class AuthManager {
     /**
      * Creates a new permission for a user
      */
-    public Permission createPermission(int userId, String permissionName) {
+    public Permission createPermission(int userId, String permissionName)
+    {
         AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         return factory.createUserDAO().createPermission(userId, permissionName);
     }
@@ -130,7 +144,8 @@ public class AuthManager {
     /**
      * Updates an existing permission
      */
-    public void updatePermission(int permissionId, String permissionName) {
+    public void updatePermission(int permissionId, String permissionName)
+    {
         AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         factory.createUserDAO().updatePermission(permissionId, permissionName);
     }
@@ -138,7 +153,8 @@ public class AuthManager {
     /**
      * Deletes a permission
      */
-    public void deletePermission(int permissionId) {
+    public void deletePermission(int permissionId)
+    {
         AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         factory.createUserDAO().deletePermission(permissionId);
     }
@@ -146,30 +162,47 @@ public class AuthManager {
     /**
      * Get currently connected user
      */
-    public User getConnectedUser() {
+    public User getConnectedUser()
+    {
         return connectedUser;
     }
 
     /**
      * Check if a user is currently authenticated
      */
-    public boolean isAuthenticated() {
+    public boolean isAuthenticated()
+    {
         return connectedUser != null;
     }
 
     /**
      * Get session by ID
      */
-    public Session getSession(String sessionId) {
+    public Session getSession(String sessionId)
+    {
         return activeSessions.get(sessionId);
     }
 
     /**
+     * Check if a user exists by username
+     */
+    public boolean userExists(String username)
+    {
+        if (connectedUsers.containsKey(username))
+        {
+            return true;
+        }
+        AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
+        User user = factory.createUserDAO().getUserById(username);
+        return user != null;
+    }
+    /*
      * Gets a user by username
      * @param username The username to look up
      * @return User if found, null otherwise
      */
-    public User getUserByUsername(String username) {
+    public User getUserByUsername(String username)
+    {
         AbstractDAOFactory factory = AbstractDAOFactory.getFactory();
         return factory.createUserDAO().getUserById(username);
     }

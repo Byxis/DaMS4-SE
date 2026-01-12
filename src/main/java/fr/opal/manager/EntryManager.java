@@ -1,15 +1,20 @@
-package fr.opal.service;
+package fr.opal.manager;
 
-import fr.opal.type.Entry;
-import fr.opal.type.User;
-import fr.opal.type.Message;
-import fr.opal.type.UserPermission;
-import fr.opal.type.EPermission;
-import fr.opal.type.EntryContextDTO;
 import fr.opal.dao.EntryDAO;
-import fr.opal.factory.AbstractDAOFactory;
 import fr.opal.facade.EntryFacade;
-
+import fr.opal.factory.AbstractDAOFactory;
+import fr.opal.service.EntryJsonExporter;
+import fr.opal.service.EntryJsonImporter;
+import fr.opal.service.EntryXmlExporter;
+import fr.opal.service.EntryXmlImporter;
+import fr.opal.service.IEntryExporter;
+import fr.opal.service.IEntryImporter;
+import fr.opal.type.EPermission;
+import fr.opal.type.Entry;
+import fr.opal.type.EntryContextDTO;
+import fr.opal.type.Message;
+import fr.opal.type.User;
+import fr.opal.type.UserPermission;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,8 +26,8 @@ import java.util.List;
  * Delegates persistence to DAO
  * Uses unified channel architecture for messages (comments)
  */
-public class EntryManager {
-
+public class EntryManager
+{
     private Entry currentEntry;
     private User currentUser;
     private AuthManager authManager;
@@ -33,7 +38,8 @@ public class EntryManager {
      * Constructor with no parameters
      * Manager doesn't maintain current user - can handle any user
      */
-    public EntryManager() {
+    public EntryManager()
+    {
         this.authManager = AuthManager.getInstance();
         this.dao = AbstractDAOFactory.getFactory().createEntryDAO();
         this.channelManager = new ChannelManager();
@@ -44,7 +50,8 @@ public class EntryManager {
     /**
      * Constructor with current user (for backward compatibility)
      */
-    public EntryManager(User currentUser) {
+    public EntryManager(User currentUser)
+    {
         this();
         this.currentUser = currentUser;
     }
@@ -53,7 +60,8 @@ public class EntryManager {
      * Sets the current user for permission checks
      * Used by facade to set context before operations
      */
-    public void setCurrentUser(User user) {
+    public void setCurrentUser(User user)
+    {
         this.currentUser = user;
     }
 
@@ -66,26 +74,28 @@ public class EntryManager {
      * - Parent Entry: Metadata only (ID, Title, Permissions) or null if root
      * - Child Entries: List of metadata only (ID, Title, Permissions)
      */
-    public EntryContextDTO getEntry(int id) {
+    public EntryContextDTO getEntry(int id)
+    {
         // Load the target entry with full details and Depth-1 neighbors
         Entry targetEntry = dao.loadEntryWithDetails(id);
-        
-        if (targetEntry == null) {
+
+        if (targetEntry == null)
+        {
             return null;
         }
-        
+
         // Extract parent (Depth -1) - metadata only
         Entry parentEntry = targetEntry.getParentEntry();
-        
+
         // Extract children (Depth +1) - already metadata only from DAO
         List<Entry> childEntries = targetEntry.getChildEntries();
-        
+
         // Create and return the context DTO
         EntryContextDTO context = new EntryContextDTO(targetEntry, parentEntry, childEntries);
-        
+
         // Store the target as current for backward compatibility
         this.currentEntry = targetEntry;
-        
+
         return context;
     }
 
@@ -94,17 +104,20 @@ public class EntryManager {
      * Business logic: verifies user has access before returning
      * @throws PermissionException if user does not have access
      */
-    public EntryContextDTO getEntryWithAccessCheck(int entryId) throws PermissionException {
+    public EntryContextDTO getEntryWithAccessCheck(int entryId) throws PermissionException
+    {
         EntryContextDTO context = getEntry(entryId);
-        if (context == null) {
+        if (context == null)
+        {
             return null;
         }
-        
+
         Entry targetEntry = context.getTargetEntry();
-        if (!targetEntry.canUserAccess(currentUser)) {
+        if (!targetEntry.canUserAccess(currentUser))
+        {
             throw new PermissionException("You do not have permission to view this entry.");
         }
-        
+
         this.currentEntry = targetEntry;
         return context;
     }
@@ -113,25 +126,40 @@ public class EntryManager {
      * Loads a project entry by name
      * Business logic: searches through root entries to find matching project
      */
-    public EntryContextDTO loadProjectByName(String projectName) {
+    public EntryContextDTO loadProjectByName(String projectName)
+    {
         List<Entry> rootEntries = getAllRootEntries();
         Entry rootEntry = null;
-        
-        for (Entry entry : rootEntries) {
-            if (projectName.equals(entry.getTitle())) {
+
+        for (Entry entry : rootEntries)
+        {
+            if (projectName.equals(entry.getTitle()))
+            {
                 rootEntry = entry;
                 break;
             }
         }
-        
-        if (rootEntry != null) {
+
+        if (rootEntry != null)
+        {
             EntryContextDTO context = getEntry(rootEntry.getId());
-            if (context != null) {
+            if (context != null)
+            {
                 this.currentEntry = context.getTargetEntry();
             }
             return context;
         }
-        
+
+        // If not found, create it automatically if we have a connected user
+        User author = authManager.getConnectedUser();
+        if (author != null)
+        {
+            // Create new root entry for this project
+            rootEntry = createNewEntry(projectName, "Root entry for project " + projectName, author);
+            this.currentEntry = rootEntry;
+            return getEntry(rootEntry.getId());
+        }
+
         return null;
     }
 
@@ -139,12 +167,16 @@ public class EntryManager {
      * Persists an entry to the database
      * Handles both new entries (insert) and existing entries (update)
      */
-    public void persistEntry(Entry entry) {
-        if (entry.getId() == 0) {
+    public void persistEntry(Entry entry)
+    {
+        if (entry.getId() == 0)
+        {
             // New entry - insert and update ID
             int id = dao.createEntry(entry);
             entry.setId(id);
-        } else {
+        }
+        else
+        {
             // Existing entry - update
             dao.saveEntry(entry);
         }
@@ -156,9 +188,11 @@ public class EntryManager {
      * Persists an entire entry structure recursively
      * Saves root and all descendants with all their data
      */
-    public void persistEntryStructure(Entry rootEntry) {
+    public void persistEntryStructure(Entry rootEntry)
+    {
         persistEntry(rootEntry);
-        for (Entry child : rootEntry.getChildEntries()) {
+        for (Entry child : rootEntry.getChildEntries())
+        {
             persistEntryStructure(child);
         }
     }
@@ -166,7 +200,8 @@ public class EntryManager {
     /**
      * Creates a new entry and saves it immediately
      */
-    public Entry createNewEntry(String title, String content, User author) {
+    public Entry createNewEntry(String title, String content, User author)
+    {
         Entry entry = AbstractDAOFactory.getFactory().createEntry(title, content, author);
         persistEntry(entry);
         return entry;
@@ -175,21 +210,24 @@ public class EntryManager {
     /**
      * Removes an entry from the database
      */
-    public void removeEntry(int id) {
+    public void removeEntry(int id)
+    {
         dao.deleteEntry(id);
     }
 
     /**
      * Gets all root entries from the database
      */
-    public List<Entry> getAllRootEntries() {
+    public List<Entry> getAllRootEntries()
+    {
         return dao.getRootEntries();
     }
 
     /**
      * Gets child entries of a parent from the database
      */
-    public List<Entry> getChildrenOfEntry(int parentId) {
+    public List<Entry> getChildrenOfEntry(int parentId)
+    {
         return dao.getChildEntries(parentId);
     }
 
@@ -198,15 +236,18 @@ public class EntryManager {
     /**
      * Gets the root of the entry tree
      */
-    public Entry getRootEntry() {
-        if (currentEntry == null) return null;
+    public Entry getRootEntry()
+    {
+        if (currentEntry == null)
+            return null;
         return currentEntry.getRootEntry();
     }
 
     /**
      * Gets all root entries (project roots)
      */
-    public List<Entry> getRootEntries() {
+    public List<Entry> getRootEntries()
+    {
         return getAllRootEntries();
     }
 
@@ -214,16 +255,19 @@ public class EntryManager {
      * Navigates to parent entry
      * Reloads parent from database with full Depth-1 context
      */
-    public EntryContextDTO navigateToParent() throws PermissionException {
-        if (currentEntry == null || currentEntry.getParentEntry() == null) {
+    public EntryContextDTO navigateToParent() throws PermissionException
+    {
+        if (currentEntry == null || currentEntry.getParentEntry() == null)
+        {
             return null;
         }
-        
+
         Entry parentMetadata = currentEntry.getParentEntry();
-        if (!hasPermission(parentMetadata, EPermission.READER)) {
+        if (!hasPermission(parentMetadata, EPermission.READER))
+        {
             throw new PermissionException("User does not have permission to view parent entry");
         }
-        
+
         // Reload parent with full Depth-1 context (its own parent, children, etc.)
         return getEntry(parentMetadata.getId());
     }
@@ -232,11 +276,13 @@ public class EntryManager {
      * Navigates to a child entry
      * Reloads child from database with full Depth-1 context
      */
-    public EntryContextDTO navigateToChild(Entry child) throws PermissionException {
-        if (!hasPermission(child, EPermission.READER)) {
+    public EntryContextDTO navigateToChild(Entry child) throws PermissionException
+    {
+        if (!hasPermission(child, EPermission.READER))
+        {
             throw new PermissionException("User does not have permission to view this entry");
         }
-        
+
         // Reload child with full Depth-1 context (its own parent, children, etc.)
         return getEntry(child.getId());
     }
@@ -244,16 +290,20 @@ public class EntryManager {
     /**
      * Gets all child entries of the current entry
      */
-    public List<Entry> getChildEntries() {
-        if (currentEntry == null) return new ArrayList<>();
+    public List<Entry> getChildEntries()
+    {
+        if (currentEntry == null)
+            return new ArrayList<>();
         return currentEntry.getChildEntries();
     }
 
     /**
      * Gets all descendants (flattened tree) of the current entry
      */
-    public List<Entry> getDescendants() {
-        if (currentEntry == null) return new ArrayList<>();
+    public List<Entry> getDescendants()
+    {
+        if (currentEntry == null)
+            return new ArrayList<>();
         return currentEntry.getDescendants();
     }
 
@@ -262,10 +312,12 @@ public class EntryManager {
     /**
      * Changes the parent of an entry (with circular dependency check)
      */
-    public void updateEntryParent(Entry entry, Entry newParent) throws Entry.CircularDependencyException {
+    public void updateEntryParent(Entry entry, Entry newParent) throws Entry.CircularDependencyException
+    {
         entry.setParentEntry(newParent);
         persistEntry(entry);
-        if (newParent != null) {
+        if (newParent != null)
+        {
             persistEntry(newParent);
         }
     }
@@ -273,7 +325,8 @@ public class EntryManager {
     /**
      * Adds a child to an entry
      */
-    public void attachChildToParent(Entry parent, Entry child) throws Entry.CircularDependencyException {
+    public void attachChildToParent(Entry parent, Entry child) throws Entry.CircularDependencyException
+    {
         parent.addChildEntry(child);
         persistEntry(parent);
         persistEntry(child);
@@ -282,7 +335,8 @@ public class EntryManager {
     /**
      * Removes a child from an entry
      */
-    public void detachChildFromParent(Entry parent, Entry child) {
+    public void detachChildFromParent(Entry parent, Entry child)
+    {
         parent.removeChildEntry(child);
         persistEntry(parent);
         persistEntry(child);
@@ -295,24 +349,30 @@ public class EntryManager {
      * Permission: COMMENTOR or EDITOR
      * Message is persisted immediately via ChannelManager (Auto-Save)
      */
-    public void addComment(int entryId, User sender, String content) throws PermissionException {
+    public void addComment(int entryId, User sender, String content) throws PermissionException
+    {
         // SECURITY: Verify user has permission to comment
         Entry entry = dao.loadEntryWithDetails(entryId);
-        if (entry == null) {
+        if (entry == null)
+        {
             throw new PermissionException("Entry not found");
         }
-        
-        if (!hasPermission(entry, EPermission.COMMENTOR)) {
+
+        if (!hasPermission(entry, EPermission.COMMENTOR))
+        {
             throw new PermissionException("You do not have permission to comment on this entry");
         }
-        
-        try {
+
+        try
+        {
             // Delegate message creation and persistence to ChannelManager
             Message message = channelManager.sendMessage(entry.getChannelId(), sender, content);
-            
+
             // Update cached messages in entry
             entry.addMessage(message);
-        } catch (ChannelManager.MessageValidationException e) {
+        }
+        catch (ChannelManager.MessageValidationException e)
+        {
             throw new PermissionException(e.getMessage());
         }
     }
@@ -323,8 +383,8 @@ public class EntryManager {
      * Permission: COMMENTOR or EDITOR
      * Message is persisted immediately via ChannelManager (Auto-Save)
      */
-    @Deprecated
-    public void addMessage(int entryId, Message message) throws PermissionException {
+    @Deprecated public void addMessage(int entryId, Message message) throws PermissionException
+    {
         // Delegate to new method
         addComment(entryId, message.getSender(), message.getContent());
     }
@@ -333,15 +393,17 @@ public class EntryManager {
      * Removes a message from entry's channel with permission checks
      * Permission: EDITOR (or message author)
      */
-    public void deleteMessage(Entry entry, Message message) throws PermissionException {
+    public void deleteMessage(Entry entry, Message message) throws PermissionException
+    {
         // SECURITY: Only EDITOR can remove messages
-        if (!hasPermission(entry, EPermission.EDITOR)) {
+        if (!hasPermission(entry, EPermission.EDITOR))
+        {
             throw new PermissionException("You do not have permission to delete comments");
         }
-        
+
         // Delegate deletion to ChannelManager
         channelManager.deleteMessage(message.getId());
-        
+
         // Update cached messages
         entry.removeMessage(message);
     }
@@ -349,8 +411,10 @@ public class EntryManager {
     /**
      * Gets all messages for an entry from its channel
      */
-    public List<Message> getMessages(Entry entry) {
-        if (entry.getChannelId() > 0) {
+    public List<Message> getMessages(Entry entry)
+    {
+        if (entry.getChannelId() > 0)
+        {
             return channelManager.getMessagesForChannel(entry.getChannelId());
         }
         return entry.getMessages();
@@ -364,21 +428,24 @@ public class EntryManager {
      * Permission: EDITOR only
      * SECURITY: READER and COMMENTOR users are strictly blocked
      */
-    public void updateEntryContent(int entryId, String newTitle, String newContent) throws PermissionException {
+    public void updateEntryContent(int entryId, String newTitle, String newContent) throws PermissionException
+    {
         Entry entry = dao.loadEntryWithDetails(entryId);
-        if (entry == null) {
+        if (entry == null)
+        {
             throw new PermissionException("Entry not found");
         }
-        
+
         // Use cascading permission check
-        if (!hasPermission(entry, EPermission.EDITOR)) {
+        if (!hasPermission(entry, EPermission.EDITOR))
+        {
             throw new PermissionException("You do not have editor permissions for this entry");
         }
-        
+
         // Update entry data
         entry.setTitle(newTitle);
         entry.setContent(newContent);
-        
+
         // Persist the entry content changes
         persistEntry(entry);
     }
@@ -391,28 +458,34 @@ public class EntryManager {
      * @deprecated Use updateEntryContent() and setUserPermission() separately
      */
     @Deprecated
-    public void updateEntry(int entryId, String newTitle, String newContent, List<UserPermission> permissionOverrides) throws PermissionException {
+    public void updateEntry(int entryId, String newTitle, String newContent, List<UserPermission> permissionOverrides)
+        throws PermissionException
+    {
         Entry entry = dao.loadEntryWithDetails(entryId);
-        if (entry == null) {
+        if (entry == null)
+        {
             throw new PermissionException("Entry not found");
         }
-        
+
         // Use cascading permission check
-        if (!hasPermission(entry, EPermission.EDITOR)) {
+        if (!hasPermission(entry, EPermission.EDITOR))
+        {
             throw new PermissionException("You do not have editor permissions for this entry");
         }
-        
+
         // Update entry data
         entry.setTitle(newTitle);
         entry.setContent(newContent);
-        
+
         // Update permissions if provided
-        if (permissionOverrides != null && !permissionOverrides.isEmpty()) {
-            for (UserPermission perm : permissionOverrides) {
+        if (permissionOverrides != null && !permissionOverrides.isEmpty())
+        {
+            for (UserPermission perm : permissionOverrides)
+            {
                 entry.getPermissionManager().addUserPermission(perm);
             }
         }
-        
+
         // Persist the complete entry with all changes
         persistEntry(entry);
     }
@@ -423,12 +496,14 @@ public class EntryManager {
      * Sets a user's permission on an entry by User object
      * Permission: EDITOR only - auto-saves immediately
      */
-    public void setUserPermission(Entry entry, User user, EPermission permission) throws PermissionException {
+    public void setUserPermission(Entry entry, User user, EPermission permission) throws PermissionException
+    {
         // SECURITY: Only EDITOR can modify permissions
-        if (!hasPermission(entry, EPermission.EDITOR)) {
+        if (!hasPermission(entry, EPermission.EDITOR))
+        {
             throw new PermissionException("You do not have editor permissions to modify permissions");
         }
-        
+
         UserPermission up = new UserPermission(user, permission);
         entry.getPermissionManager().addUserPermission(up);
         persistEntry(entry);
@@ -439,25 +514,31 @@ public class EntryManager {
      * Permission: EDITOR only - auto-saves immediately
      * Looks up the user by username and applies the permission
      */
-    public void setUserPermissionByUsername(Entry entry, String username, EPermission permission) throws PermissionException {
+    public void setUserPermissionByUsername(Entry entry, String username, EPermission permission)
+        throws PermissionException
+    {
         // SECURITY: Only EDITOR can modify permissions
-        if (!hasPermission(entry, EPermission.EDITOR)) {
+        if (!hasPermission(entry, EPermission.EDITOR))
+        {
             throw new PermissionException("You do not have editor permissions to modify permissions");
         }
-        
-        if (username == null || username.trim().isEmpty()) {
+
+        if (username == null || username.trim().isEmpty())
+        {
             throw new PermissionException("Username cannot be empty");
         }
-        if (permission == null) {
+        if (permission == null)
+        {
             throw new PermissionException("Permission cannot be null");
         }
-        
+
         // Look up user by username
         User user = authManager.getUserByUsername(username);
-        if (user == null) {
+        if (user == null)
+        {
             throw new PermissionException("User not found: " + username);
         }
-        
+
         // Set the permission (bypasses redundant permission check since we already verified)
         UserPermission up = new UserPermission(user, permission);
         entry.getPermissionManager().addUserPermission(up);
@@ -468,28 +549,36 @@ public class EntryManager {
      * Checks if current user has permission on specific entry
      * Uses cascading permission check - walks up parent chain until permission is found
      */
-    private boolean hasPermission(Entry entry, EPermission requiredPermission) {
-        if (entry == null || requiredPermission == null) {
+    private boolean hasPermission(Entry entry, EPermission requiredPermission)
+    {
+        if (entry == null || requiredPermission == null)
+        {
             return false;
         }
-        
+
         // Use cascading permission check - walks up parent chain to permission boundary
         UserPermission userPerm = entry.getUserPermissionWithCascade(currentUser);
-        if (userPerm == null) {
+        if (userPerm == null)
+        {
             return false;
         }
-        
+
         EPermission userPermission = userPerm.getPermission();
-        
+
         // Check if user permission meets or exceeds required permission
-        if (requiredPermission == EPermission.READER) {
+        if (requiredPermission == EPermission.READER)
+        {
             return userPermission.canView();
-        } else if (requiredPermission == EPermission.COMMENTOR) {
+        }
+        else if (requiredPermission == EPermission.COMMENTOR)
+        {
             return userPermission.canComment();
-        } else if (requiredPermission == EPermission.EDITOR) {
+        }
+        else if (requiredPermission == EPermission.EDITOR)
+        {
             return userPermission.canEdit();
         }
-        
+
         return false;
     }
 
@@ -498,14 +587,16 @@ public class EntryManager {
     /**
      * Gets the current entry
      */
-    public Entry getCurrentEntry() {
+    public Entry getCurrentEntry()
+    {
         return currentEntry;
     }
 
     /**
      * Sets the current entry
      */
-    public void setCurrentEntry(Entry entry) {
+    public void setCurrentEntry(Entry entry)
+    {
         this.currentEntry = entry;
     }
 
@@ -515,18 +606,16 @@ public class EntryManager {
      * Gets the UI state for an entry based on user permissions
      * Business logic: determines view/comment/edit permissions
      */
-    public EntryFacade.EntryUIState getUIStateForEntry(Entry entry, User user) {
+    public EntryFacade.EntryUIState getUIStateForEntry(Entry entry, User user)
+    {
         UserPermission userPerm = entry.getUserPermissionWithCascade(user);
-        if (userPerm == null || userPerm.getPermission() == null) {
+        if (userPerm == null || userPerm.getPermission() == null)
+        {
             return new EntryFacade.EntryUIState(false, false, false);
         }
-        
+
         EPermission permission = userPerm.getPermission();
-        return new EntryFacade.EntryUIState(
-            permission.canView(),
-            permission.canComment(),
-            permission.canEdit()
-        );
+        return new EntryFacade.EntryUIState(permission.canView(), permission.canComment(), permission.canEdit());
     }
 
     // ==================== Import/Export ====================
@@ -536,20 +625,27 @@ public class EntryManager {
      * Business logic: determines format from extension and imports
      * @throws IllegalArgumentException for unsupported file formats
      */
-    public Entry importEntryFromFile(File file) throws Exception {
+    public Entry importEntryFromFile(File file) throws Exception
+    {
         IEntryImporter importer;
         String fileName = file.getName().toLowerCase();
-        
-        if (fileName.endsWith(".json")) {
+
+        if (fileName.endsWith(".json"))
+        {
             importer = new EntryJsonImporter();
-        } else if (fileName.endsWith(".xml")) {
+        }
+        else if (fileName.endsWith(".xml"))
+        {
             importer = new EntryXmlImporter();
-        } else {
+        }
+        else
+        {
             throw new IllegalArgumentException("Unsupported file format. Supported formats: JSON, XML");
         }
 
         Entry importedEntry = importer.importEntry(file.getAbsolutePath());
-        if (importedEntry != null) {
+        if (importedEntry != null)
+        {
             this.currentEntry = importedEntry;
         }
         return importedEntry;
@@ -560,15 +656,21 @@ public class EntryManager {
      * Business logic: determines format from extension and exports
      * @throws IllegalArgumentException for unsupported file formats
      */
-    public void exportEntryToFile(Entry entry, File file) throws Exception {
+    public void exportEntryToFile(Entry entry, File file) throws Exception
+    {
         IEntryExporter exporter;
         String fileName = file.getName().toLowerCase();
-        
-        if (fileName.endsWith(".json")) {
+
+        if (fileName.endsWith(".json"))
+        {
             exporter = new EntryJsonExporter();
-        } else if (fileName.endsWith(".xml")) {
+        }
+        else if (fileName.endsWith(".xml"))
+        {
             exporter = new EntryXmlExporter();
-        } else {
+        }
+        else
+        {
             throw new IllegalArgumentException("Unsupported file format. Supported formats: JSON, XML");
         }
 
@@ -578,8 +680,10 @@ public class EntryManager {
     /**
      * Exception for permission-related errors
      */
-    public static class PermissionException extends Exception {
-        public PermissionException(String message) {
+    public static class PermissionException extends Exception
+    {
+        public PermissionException(String message)
+        {
             super(message);
         }
     }

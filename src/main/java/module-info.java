@@ -1,8 +1,10 @@
-module fr.opal {
+module fr.opal
+{
     requires javafx.controls;
     requires transitive javafx.graphics;
     requires javafx.fxml;
-    requires transitive java.sql;
+    requires java.sql;
+    requires java.logging;
 
     opens fr.opal.UI to javafx.fxml;
     opens fr.opal.UI.login to javafx.fxml;
@@ -13,6 +15,8 @@ module fr.opal {
     opens fr.opal.service to javafx.fxml;
     opens fr.opal.manager to javafx.fxml;
     opens fr.opal.type to javafx.fxml;
+    opens fr.opal.db to javafx.fxml;
+    opens fr.opal.exception to javafx.fxml;
 
     exports fr.opal.UI.login;
     exports fr.opal.controller;
@@ -22,4 +26,6 @@ module fr.opal {
     exports fr.opal.service;
     exports fr.opal.manager;
     exports fr.opal.type;
+    exports fr.opal.db;
+    exports fr.opal.exception;
 }

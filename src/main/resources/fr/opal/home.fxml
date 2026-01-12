@@ -1,34 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
 
-<AnchorPane fx:id="rootPane" prefHeight="600.0" prefWidth="800.0" styleClass="main-container" stylesheets="@style.css, @home.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.HomeController">
+<AnchorPane fx:id="rootPane" prefHeight="600.0" prefWidth="800.0" styleClass="main-container" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fr.opal.controller.HomeController">
+
+   <stylesheets>
+      <URL value="@style.css" />
+      <URL value="@home.css" />
+   </stylesheets>
+
    <children>
-      <!-- Navbar (Full Width Background, Centered Content) -->
       <HBox alignment="CENTER" prefHeight="80.0" styleClass="header-bar" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <padding>
+            <Insets left="20.0" right="20.0" />
+         </padding>
          <children>
-            <HBox alignment="CENTER_LEFT" maxWidth="1200.0" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER_LEFT" spacing="15.0" styleClass="profile-container" onMouseClicked="#openProfileDialog">
                <children>
-                  <HBox alignment="CENTER_LEFT" onMouseClicked="#openProfileDialog" spacing="15.0" styleClass="profile-container">
+                  <Button fx:id="userProfileBtn" mnemonicParsing="false" mouseTransparent="true" styleClass="profile-button" text="👤" />
+                  <VBox alignment="CENTER_LEFT">
                      <children>
-                        <Button fx:id="userProfileBtn" mnemonicParsing="false" mouseTransparent="true" styleClass="profile-button" text="👤" />
-                        <VBox alignment="CENTER_LEFT">
-                           <children>
-                              <Label fx:id="usernameLabel" styleClass="title-label" text="Username" />
-                              <Label styleClass="muted-label" text="View Profile" />
-                           </children>
-                        </VBox>
+                        <Label fx:id="usernameLabel" styleClass="title-label" text="Username" />
+                        <Label styleClass="muted-label" text="View Profile" />
                      </children>
-                  </HBox>
+                  </VBox>
+               </children>
+            </HBox>
 
-                  <HBox HBox.hgrow="ALWAYS" />
+            <Region HBox.hgrow="ALWAYS" />
 
-                  <Button fx:id="entryBtn" mnemonicParsing="false" onAction="#goToEntryView" styleClass="navbar-button" text="📝" />
+            <HBox alignment="CENTER" spacing="10.0">
+               <children>
+                  <Button fx:id="refreshBtn" mnemonicParsing="false" onAction="#refreshData" styleClass="navbar-button" style="-fx-font-size: 10;" text="🔄 Refresh" />
                   <Button fx:id="settingsBtn" mnemonicParsing="false" onAction="#openSettings" styleClass="navbar-button" text="⚙" />
                   <Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#logout" styleClass="navbar-button" text="🚪" />
                </children>
@@ -36,28 +42,40 @@
          </children>
       </HBox>
 
-      <!-- Main Content (Centered Container) -->
-      <VBox alignment="TOP_CENTER" spacing="20.0" style="-fx-padding: 20;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="80.0">
+      <VBox alignment="TOP_CENTER" spacing="20.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="80.0">
+         <padding>
+            <Insets bottom="20.0" left="40.0" right="40.0" top="20.0" />
+         </padding>
          <children>
-            <VBox maxWidth="1200.0" spacing="20.0" VBox.vgrow="ALWAYS">
+            <Label styleClass="title-large" text="Welcome" />
+            <Label fx:id="welcomeLabel" styleClass="subtitle-label" text="You are successfully logged in to Opal." textAlignment="CENTER" wrapText="true" />
+
+            <HBox alignment="CENTER" spacing="10.0">
                <children>
-                  <Label styleClass="title-large" text="Welcome" />
-                  <Label fx:id="welcomeLabel" styleClass="subtitle-label" text="You are successfully logged in to Opal." textAlignment="CENTER" wrapText="true" />
-                  
-                  <!-- Friends Section -->
-                  <VBox spacing="10.0" style="-fx-padding: 20 0 0 0;">
-                     <children>
-                        <Label styleClass="section-title" text="Friends &amp; Connections" />
-                        <HBox spacing="10.0">
-                           <children>
-                              <Button mnemonicParsing="false" onAction="#openFriendsList" styleClass="button, primary-button" text="View Friends" />
-                              <Button mnemonicParsing="false" onAction="#openFriendSearch" styleClass="button, secondary-button" text="Find Friends" />
-                           </children>
-                        </HBox>
-                     </children>
-                  </VBox>
+                  <Button fx:id="createProjectBtn" mnemonicParsing="false" onAction="#createNewProject" styleClass="button, primary-button" text="Create a new project" />
+                  <Button mnemonicParsing="false" onAction="#openFriendsList" styleClass="button, primary-button" text="View Friends" />
+                  <Button mnemonicParsing="false" onAction="#openFriendSearch" styleClass="button, secondary-button" text="Find Friends" />
                </children>
-            </VBox>
+            </HBox>
+
+            <Separator />
+
+            <HBox alignment="CENTER_LEFT" spacing="15.0">
+               <children>
+                  <Label style="-fx-font-size: 16; -fx-font-weight: bold;" text="Your Projects" />
+                  <Region HBox.hgrow="ALWAYS" />
+                  <Button fx:id="invitationsBtn" mnemonicParsing="false" onAction="#openInvitations" style="-fx-font-size: 12;" text="📬 Invitations (0)" />
+                  <Button fx:id="notificationsBtn" mnemonicParsing="false" onAction="#openNotifications" style="-fx-font-size: 12; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold;" text="🔔 Notifications (0)" />
+               </children>
+            </HBox>
+
+            <TextField fx:id="homeSearchField" prefHeight="35" promptText="🔍 Search projects..." style="-fx-padding: 8;" />
+
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+               <content>
+                  <VBox fx:id="projectsContainer" spacing="10" style="-fx-padding: 10;" />
+               </content>
+            </ScrollPane>
          </children>
       </VBox>
    </children>

@@ -10,7 +10,14 @@ public class User {
     private String password;
 
     /**
-     * Default constructor
+     * Default empty constructor
+     */
+    public User() {
+        this(0, "", "");
+    }
+
+    /**
+     * Constructor with parameters
      */
     public User(int id, String username, String password)
     {

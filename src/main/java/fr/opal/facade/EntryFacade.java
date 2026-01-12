@@ -5,7 +5,7 @@ import fr.opal.type.EPermission;
 import fr.opal.type.User;
 import fr.opal.type.Message;
 import fr.opal.type.EntryContextDTO;
-import fr.opal.service.EntryManager;
+import fr.opal.manager.EntryManager;
 
 import java.io.File;
 import java.util.List;

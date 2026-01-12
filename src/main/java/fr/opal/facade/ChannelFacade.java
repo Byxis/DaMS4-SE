@@ -1,6 +1,6 @@
 package fr.opal.facade;
 
-import fr.opal.service.ChannelManager;
+import fr.opal.manager.ChannelManager;
 import fr.opal.type.Channel;
 import fr.opal.type.Message;
 import fr.opal.type.User;

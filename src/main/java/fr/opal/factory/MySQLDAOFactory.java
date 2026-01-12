@@ -29,6 +29,16 @@ public class MySQLDAOFactory extends AbstractDAOFactory
         return new MySQLSessionDAO(connection);
     }
 
+    @Override public NotificationDAO createNotificationDAO()
+    {
+        return new MySQLNotificationDAO(connection);
+    }
+
+    @Override public ProjectDAO createProjectDAO()
+    {
+        return new MySQLProjectDAO(connection);
+    }
+
     @Override public FriendsDAO createFriendsDAO()
     {
         return new MySQLFriendsDAO(connection);

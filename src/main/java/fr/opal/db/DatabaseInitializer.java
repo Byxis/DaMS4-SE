@@ -8,97 +8,158 @@ import java.sql.Statement;
 import java.util.logging.Logger;
 
 /**
- * Handles database schema initialization.
+ * Handles database schema initialization and updates.
  */
-public class DatabaseInitializer {
-
+public class DatabaseInitializer
+{
     private static final Logger LOGGER = Logger.getLogger(DatabaseInitializer.class.getName());
 
     /**
-     * Ensures the database schema is up to date with the unified channel architecture.
-     * Adds missing columns/tables without dropping existing data.
-     * Safe to call on every startup.
+     * Initializes the database schema and ensures it is up to date.
      */
-    public static void ensureSchemaUpToDate(Connection connection) {
-        try (Statement stmt = connection.createStatement()) {
-            LOGGER.info("Checking database schema for unified channel architecture...");
+    public static void initialize(Connection connection)
+    {
+        try (Statement stmt = connection.createStatement())
+        {
+            LOGGER.info("Starting database schema initialization...");
 
-            // Ensure channels table exists
-            stmt.execute("CREATE TABLE IF NOT EXISTS channels (" +
-                    "id INT PRIMARY KEY AUTO_INCREMENT," +
-                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-                    ") ENGINE=InnoDB;");
+            stmt.execute("CREATE TABLE IF NOT EXISTS users ("
+                + "id INT PRIMARY KEY AUTO_INCREMENT,"
+                + "username VARCHAR(50) UNIQUE NOT NULL,"
+                + "password VARCHAR(100) NOT NULL"
+                + ") ENGINE=InnoDB;");
 
-            // Ensure messages table exists
-            stmt.execute("CREATE TABLE IF NOT EXISTS messages (" +
-                    "id BIGINT PRIMARY KEY AUTO_INCREMENT," +
-                    "channel_id INT NOT NULL," +
-                    "sender_id INT NOT NULL," +
-                    "content TEXT NOT NULL," +
-                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                    "INDEX idx_channel_created (channel_id, created_at DESC)" +
-                    ") ENGINE=InnoDB;");
+            stmt.execute("CREATE TABLE IF NOT EXISTS projects ("
+                + "id INT PRIMARY KEY AUTO_INCREMENT,"
+                + "name VARCHAR(255) NOT NULL,"
+                + "description TEXT,"
+                + "owner_id INT NOT NULL,"
+                + "state ENUM('PRIVATE', 'PUBLIC', 'ARCHIVED') DEFAULT 'PRIVATE',"
+                + "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+                + "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
+                + "FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE"
+                + ") ENGINE=InnoDB;");
 
-            // Check if friendships table has channel_id column
-            try {
-                ResultSet rs = stmt.executeQuery("SELECT channel_id FROM friendships LIMIT 1");
-                rs.close();
-                LOGGER.fine("friendships.channel_id column already exists");
-            } catch (SQLException e) {
-                // Column doesn't exist, add it
-                LOGGER.info("Adding channel_id column to friendships table...");
-                stmt.execute("ALTER TABLE friendships ADD COLUMN channel_id INT UNIQUE NULL");
-                LOGGER.info("Added channel_id column to friendships table");
-            }
+            stmt.execute("CREATE TABLE IF NOT EXISTS project_collaborators ("
+                + "id INT PRIMARY KEY AUTO_INCREMENT,"
+                + "project_id INT NOT NULL,"
+                + "username VARCHAR(50) NOT NULL,"
+                + "permission ENUM('OWNER', 'CONTRIBUTOR', 'READER') DEFAULT 'READER',"
+                + "added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+                + "FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,"
+                + "UNIQUE KEY unique_collaborator (project_id, username)"
+                + ") ENGINE=InnoDB;");
 
-            // Ensure entries table has channel_id column
-            try {
-                ResultSet rs = stmt.executeQuery("SELECT channel_id FROM entries LIMIT 1");
-                rs.close();
-                LOGGER.fine("entries.channel_id column already exists");
-            } catch (SQLException e) {
-                // Column doesn't exist, add it
-                LOGGER.info("Adding channel_id column to entries table...");
-                stmt.execute("ALTER TABLE entries ADD COLUMN channel_id INT UNIQUE NOT NULL");
-                LOGGER.info("Added channel_id column to entries table");
-            }
+            stmt.execute("CREATE TABLE IF NOT EXISTS project_tags ("
+                + "id INT PRIMARY KEY AUTO_INCREMENT,"
+                + "project_id INT NOT NULL,"
+                + "tag VARCHAR(50) NOT NULL,"
+                + "FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,"
+                + "UNIQUE KEY unique_tag (project_id, tag)"
+                + ") ENGINE=InnoDB;");
 
-            // Create channels for accepted friendships that don't have one yet
+            stmt.execute("CREATE TABLE IF NOT EXISTS project_invitations ("
+                + "id INT PRIMARY KEY AUTO_INCREMENT,"
+                + "project_id INT NOT NULL,"
+                + "invited_username VARCHAR(50) NOT NULL,"
+                + "inviter_username VARCHAR(50) NOT NULL,"
+                + "suggested_permission ENUM('OWNER', 'CONTRIBUTOR', 'READER') DEFAULT 'READER',"
+                + "status ENUM('PENDING', 'ACCEPTED', 'DECLINED', 'CANCELLED') DEFAULT 'PENDING',"
+                + "sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+                + "responded_at TIMESTAMP NULL,"
+                + "FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE"
+                + ") ENGINE=InnoDB;");
+
+            stmt.execute("CREATE TABLE IF NOT EXISTS notifications ("
+                + "id INT PRIMARY KEY AUTO_INCREMENT,"
+                + "user_id INT NOT NULL,"
+                + "content TEXT NOT NULL,"
+                + "type ENUM('PROJECT', 'SOCIAL', 'GENERAL', 'INVITATION', 'COMMENT') DEFAULT 'GENERAL',"
+                + "status ENUM('TO_READ', 'READ', 'HIDDEN') DEFAULT 'TO_READ',"
+                + "creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+                + "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,"
+                + "INDEX idx_user_status (user_id, status),"
+                + "INDEX idx_creation_date (creation_date)"
+                + ") ENGINE=InnoDB;");
+
+            stmt.execute("CREATE TABLE IF NOT EXISTS channels ("
+                + "id INT PRIMARY KEY AUTO_INCREMENT,"
+                + "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+                + ") ENGINE=InnoDB;");
+
+            stmt.execute("CREATE TABLE IF NOT EXISTS messages ("
+                + "id BIGINT PRIMARY KEY AUTO_INCREMENT,"
+                + "channel_id INT NOT NULL,"
+                + "sender_id INT NOT NULL,"
+                + "content TEXT NOT NULL,"
+                + "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+                + "INDEX idx_channel_created (channel_id, created_at DESC)"
+                + ") ENGINE=InnoDB;");
+
+            ensureColumnExists(stmt, "friendships", "channel_id", "INT UNIQUE NULL");
+            ensureColumnExists(stmt, "entries", "channel_id", "INT UNIQUE NOT NULL");
+
             createMissingFriendshipChannels(connection);
 
-            LOGGER.info("Database schema check complete");
+            LOGGER.info("Database schema initialized successfully.");
+        }
+        catch (SQLException e)
+        {
+            LOGGER.severe("Failed to initialize database schema: " + e.getMessage());
+            throw new RuntimeException("Database initialization failure", e);
+        }
+    }
 
-        } catch (SQLException e) {
-            LOGGER.severe("Error checking/updating schema: " + e.getMessage());
-            throw new RuntimeException("Schema check failed", e);
+    /**
+     * Helper to add a column if it doesn't exist.
+     */
+    private static void ensureColumnExists(Statement stmt, String table, String column, String definition)
+    {
+        try
+        {
+            stmt.executeQuery("SELECT " + column + " FROM " + table + " LIMIT 1").close();
+            LOGGER.fine(table + "." + column + " column already exists");
+        }
+        catch (SQLException e)
+        {
+            LOGGER.info("Adding " + column + " column to " + table + " table...");
+            try
+            {
+                stmt.execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
+            }
+            catch (SQLException ex)
+            {
+                LOGGER.warning("Could not add column " + column + " to " + table + ": " + ex.getMessage());
+            }
         }
     }
 
     /**
      * Creates channels for any accepted friendships that are missing a channel_id.
-     * This handles friendships that were accepted before the channel architecture was added.
      */
-    private static void createMissingFriendshipChannels(Connection connection) {
+    private static void createMissingFriendshipChannels(Connection connection)
+    {
         String findMissing = "SELECT id FROM friendships WHERE status = 'ACCEPTED' AND channel_id IS NULL";
         String createChannel = "INSERT INTO channels() VALUES()";
         String updateFriendship = "UPDATE friendships SET channel_id = ? WHERE id = ?";
-        
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(findMissing)) {
-            
+
+        try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(findMissing))
+        {
             int count = 0;
-            while (rs.next()) {
+            while (rs.next())
+            {
                 int friendshipId = rs.getInt("id");
-                
-                // Create a channel
-                try (PreparedStatement createPs = connection.prepareStatement(createChannel, Statement.RETURN_GENERATED_KEYS)) {
+                try (PreparedStatement createPs =
+                         connection.prepareStatement(createChannel, Statement.RETURN_GENERATED_KEYS))
+                {
                     createPs.executeUpdate();
-                    try (ResultSet keyRs = createPs.getGeneratedKeys()) {
-                        if (keyRs.next()) {
+                    try (ResultSet keyRs = createPs.getGeneratedKeys())
+                    {
+                        if (keyRs.next())
+                        {
                             int channelId = keyRs.getInt(1);
-                            
-                            // Assign channel to friendship
-                            try (PreparedStatement updatePs = connection.prepareStatement(updateFriendship)) {
+                            try (PreparedStatement updatePs = connection.prepareStatement(updateFriendship))
+                            {
                                 updatePs.setInt(1, channelId);
                                 updatePs.setInt(2, friendshipId);
                                 updatePs.executeUpdate();
@@ -108,126 +169,12 @@ public class DatabaseInitializer {
                     }
                 }
             }
-            
-            if (count > 0) {
+            if (count > 0)
                 LOGGER.info("Created channels for " + count + " existing friendships");
-            }
-            
-        } catch (SQLException e) {
-            LOGGER.warning("Error creating missing friendship channels: " + e.getMessage());
-            // Don't fail startup for this - just log the warning
         }
-    }
-
-
-    /**
-     * Creates a mock entry hierarchy for testing.
-     * Structure:
-     * - Sample Project (root entry)
-     *   - Section 1
-     *     - Subsection 1.1
-     *     - Subsection 1.2
-     *     - Subsection 1.3
-     *     - Subsection 1.4
-     * 
-     * Root entry has EDITOR permission granted to user "lez".
-     * 
-     * @param connection Database connection
-     * @param authorId ID of the user creating the entries
-     */
-    public static void createMockEntryHierarchy(Connection connection, int authorId) {
-        try (Statement stmt = connection.createStatement()) {
-            LOGGER.info("Creating mock entry hierarchy with 6 entries...");
-
-            // Create 6 channels (one for each entry: root + section + 4 subsections)
-            for (int i = 0; i < 6; i++) {
-                stmt.execute("INSERT INTO channels() VALUES()");
-            }
-
-            // Get the starting channel ID
-            ResultSet rs = stmt.executeQuery("SELECT MAX(id) - 5 as id FROM channels");
-            rs.next();
-            int startChannelId = rs.getInt("id");
-            rs.close();
-
-            // Insert root entry
-            String rootEntrySql = "INSERT INTO entries(title, content, author_id, channel_id) VALUES (?, ?, ?, ?)";
-            int rootEntryId;
-            try (PreparedStatement ps = connection.prepareStatement(rootEntrySql, Statement.RETURN_GENERATED_KEYS)) {
-                ps.setString(1, "Sample Project");
-                ps.setString(2, "This is a sample project for testing the Entry Management System.");
-                ps.setInt(3, authorId);
-                ps.setInt(4, startChannelId);
-                ps.executeUpdate();
-                
-                rs = ps.getGeneratedKeys();
-                rs.next();
-                rootEntryId = rs.getInt(1);
-                rs.close();
-            }
-
-            // Insert Section 1
-            int section1EntryId;
-            try (PreparedStatement ps = connection.prepareStatement(rootEntrySql, Statement.RETURN_GENERATED_KEYS)) {
-                ps.setString(1, "Section 1");
-                ps.setString(2, "This is a section under the root entry");
-                ps.setInt(3, authorId);
-                ps.setInt(4, startChannelId + 1);
-                ps.executeUpdate();
-                
-                rs = ps.getGeneratedKeys();
-                rs.next();
-                section1EntryId = rs.getInt(1);
-                rs.close();
-            }
-
-            // Update Section 1's parent to point to root
-            String updateParentSql = "UPDATE entries SET parent_id = ? WHERE id = ?";
-            try (PreparedStatement ps = connection.prepareStatement(updateParentSql)) {
-                ps.setInt(1, rootEntryId);
-                ps.setInt(2, section1EntryId);
-                ps.executeUpdate();
-            }
-
-            // Insert 4 subsections under Section 1
-            String[] subsectionTitles = {"Subsection 1.1", "Subsection 1.2", "Subsection 1.3", "Subsection 1.4"};
-            for (int i = 0; i < 4; i++) {
-                try (PreparedStatement ps = connection.prepareStatement(rootEntrySql, Statement.RETURN_GENERATED_KEYS)) {
-                    ps.setString(1, subsectionTitles[i]);
-                    ps.setString(2, "This is " + subsectionTitles[i].toLowerCase() + " under Section 1");
-                    ps.setInt(3, authorId);
-                    ps.setInt(4, startChannelId + 2 + i);
-                    ps.executeUpdate();
-                    
-                    rs = ps.getGeneratedKeys();
-                    rs.next();
-                    int subsectionId = rs.getInt(1);
-                    rs.close();
-                    
-                    // Update subsection's parent to point to Section 1
-                    try (PreparedStatement ps2 = connection.prepareStatement(updateParentSql)) {
-                        ps2.setInt(1, section1EntryId);
-                        ps2.setInt(2, subsectionId);
-                        ps2.executeUpdate();
-                    }
-                }
-            }
-
-            // Add EDITOR permission to "lez" user on root entry
-            String permissionSql = "INSERT INTO entry_permissions(entry_id, username, permission) VALUES (?, ?, ?)";
-            try (PreparedStatement ps = connection.prepareStatement(permissionSql)) {
-                ps.setInt(1, rootEntryId);
-                ps.setString(2, "lez");
-                ps.setString(3, "EDITOR");
-                ps.executeUpdate();
-            }
-
-            LOGGER.info("Successfully created mock entry hierarchy with 6 entries");
-            LOGGER.info("Root entry ID: " + rootEntryId + ", User 'lez' has EDITOR permission");
-
-        } catch (SQLException e) {
-            LOGGER.severe("Error creating mock entry hierarchy: " + e.getMessage());
-            throw new RuntimeException("Failed to create mock entry hierarchy", e);
+        catch (SQLException e)
+        {
+            LOGGER.warning("Error creating missing friendship channels: " + e.getMessage());
         }
     }
 }
