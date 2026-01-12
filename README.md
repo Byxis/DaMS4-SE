@@ -29,14 +29,48 @@ Based on the design, the application primarily handles:
 - *Designed by* : <a href="https://github.com/matheorevel17"><img src="https://github.com/matheorevel17.png" width="20" style="border-radius:50%; vertical-align: middle;"> **matheorevel17**</a>
 - *Developed by* : <a href="https://github.com/byxis"><img src="https://github.com/byxis.png" width="20" style="border-radius:50%; vertical-align: middle;"> **byxis**</a>
 
-### 2. Friends & Inter-relations
+### 2. Session Management
+- **Session Tracking**: Active sessions are tracked with unique IDs.
+- **Properties**: Management of session-specific properties, like the primary color and the font size.
+- *Designed by* : <a href="https://github.com/dawoldo"><img src="https://github.com/dawoldo.png" width="20" style="border-radius:50%; vertical-align: middle;"> **dawoldo**</a>
+- *Developed by* : <a href="https://github.com/byxis"><img src="https://github.com/byxis.png" width="20" style="border-radius:50%; vertical-align: middle;"> **byxis**</a>
+
+### 3. Friends & Inter-relations
 - **Manage Friends**: Users can add, remove, or list friends.
 - **Search**: Functionality to search for other users.
 - *Designed by* : <a href="https://github.com/dawoldo"><img src="https://github.com/dawoldo.png" width="20" style="border-radius:50%; vertical-align: middle;"> **dawoldo**</a>
 - *Developed by* : <a href="https://github.com/byxis"><img src="https://github.com/byxis.png" width="20" style="border-radius:50%; vertical-align: middle;"> **byxis**</a>
 
-### 3. Session Management
-- **Session Tracking**: Active sessions are tracked with unique IDs.
-- **Properties**: Management of session-specific properties, like the primary color and the font size.
+### 4. Entry
+- **Entry Management**: Users can create, participate, modify an entry.
+- **Export/Import**: Users can import and export an entry (Not finished).
+- **Permissions**: Owners of project can add other user with Reader, Commentor, or Editor.
+- **Comments**: Users can comment on an entry.
+- *Designed by* : <a href="https://github.com/byxis"><img src="https://github.com/byxis.png" width="20" style="border-radius:50%; vertical-align: middle;"> **byxis**</a>
+- *Developed by* : <a href="https://github.com/dawoldo"><img src="https://github.com/dawoldo.png" width="20" style="border-radius:50%; vertical-align: middle;"> **dawoldo**</a>
+
+### 5. Text Channels
+- **Chat**: User can send a private message to another User
+- *Designed by* : <a href="https://github.com/matheorevel17"><img src="https://github.com/matheorevel17.png" width="20" style="border-radius:50%; vertical-align: middle;"> **matheorevel17**</a>
+- *Developed by* : <a href="https://github.com/dawoldo"><img src="https://github.com/dawoldo.png" width="20" style="border-radius:50%; vertical-align: middle;"> **dawoldo**</a>
+
+### 6. Analytics (Dropped)
+- **Analysis**: User can have statistics for a project or for himself
+- *Designed by* : <a href="https://github.com/byxis"><img src="https://github.com/byxis.png" width="20" style="border-radius:50%; vertical-align: middle;"> **byxis**</a>
+- *Developed by* : <a href="https://github.com/dawoldo"><img src="https://github.com/dawoldo.png" width="20" style="border-radius:50%; vertical-align: middle;"> **dawoldo**</a> (Dropped)
+
+### 7. Project Management (Did Not Meet Quality Requirement on development)
+- **Manage Entry**: User can see projects related to him 
 - *Designed by* : <a href="https://github.com/dawoldo"><img src="https://github.com/dawoldo.png" width="20" style="border-radius:50%; vertical-align: middle;"> **dawoldo**</a>
-- *Developed by* : <a href="https://github.com/byxis"><img src="https://github.com/byxis.png" width="20" style="border-radius:50%; vertical-align: middle;"> **byxis**</a>
+- *Developed by* : <a href="https://github.com/matheorevel17"><img src="https://github.com/matheorevel17.png" width="20" style="border-radius:50%; vertical-align: middle;"> **matheorevel17**</a> (DNMQR)
+
+### 8. Notifications (Did Not Meet Quality Requirement on development)
+- **Alerts**: When a user is invited, he is alerted trough notifications
+- **Inform**: When a comment is posted, the users related to the project receive a notification
+- *Designed by* : <a href="https://github.com/byxis"><img src="https://github.com/byxis.png" width="20" style="border-radius:50%; vertical-align: middle;"> **byxis**</a>
+- *Developed by* : <a href="https://github.com/matheorevel17"><img src="https://github.com/matheorevel17.png" width="20" style="border-radius:50%; vertical-align: middle;"> **matheorevel17**</a> (DNMQR)
+
+### 9. Logging (Not Started)
+- **Logs**: All user's actions are logged, so that he can undo and redo actions
+- *Designed by* : <a href="https://github.com/dawoldo"><img src="https://github.com/dawoldo.png" width="20" style="border-radius:50%; vertical-align: middle;"> **dawoldo**</a>
+- *Developed by* : <a href="https://github.com/matheorevel17"><img src="https://github.com/matheorevel17.png" width="20" style="border-radius:50%; vertical-align: middle;"> **matheorevel17**</a> (Not Started)
