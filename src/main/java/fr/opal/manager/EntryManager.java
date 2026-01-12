@@ -19,7 +19,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * Entry Manager Service
  * Contains entry-related business logic and persistence coordination
@@ -149,6 +148,16 @@ public class EntryManager
                 this.currentEntry = context.getTargetEntry();
             }
             return context;
+        }
+
+        // If not found, create it automatically if we have a connected user
+        User author = authManager.getConnectedUser();
+        if (author != null)
+        {
+            // Create new root entry for this project
+            rootEntry = createNewEntry(projectName, "Root entry for project " + projectName, author);
+            this.currentEntry = rootEntry;
+            return getEntry(rootEntry.getId());
         }
 
         return null;

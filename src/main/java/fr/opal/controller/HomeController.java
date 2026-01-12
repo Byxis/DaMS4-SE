@@ -183,11 +183,21 @@ public class HomeController
     /**
      * Navigates to the entry management view (opens in new window)
      */
-    @FXML private void goToEntryView()
+    /**
+     * Navigates to the entry management view (opens in new window)
+     */
+    private void goToEntryView(Project project)
     {
         try
         {
-            sceneManager.openNewWindow("/fr/opal/entry.fxml", "Entries - Opal", 1200, 800);
+            Object controllerObj = sceneManager.openNewWindowWithController(
+                "/fr/opal/entry.fxml", "Entries - " + project.getName(), 1200, 800);
+
+            if (controllerObj instanceof EntryController)
+            {
+                EntryController entryController = (EntryController) controllerObj;
+                entryController.loadProject(project.getName());
+            }
         }
         catch (IOException e)
         {
@@ -405,7 +415,7 @@ public class HomeController
         card.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2)
             {
-                goToEntryView();
+                goToEntryView(project);
             }
         });
 
