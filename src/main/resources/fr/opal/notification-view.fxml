@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox fx:id="rootContainer" spacing="15" stylesheets="@style.css, @notification.css" styleClass="dialog-content"
+      prefWidth="450" prefHeight="500"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Header -->
+    <HBox spacing="15" alignment="CENTER_LEFT" styleClass="notification-header">
+        <Label fx:id="titleLabel" text="🔔 Notifications" styleClass="title-large"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="unreadCountLabel" text="0 unread" styleClass="unread-badge"/>
+    </HBox>
+
+    <!-- Actions -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button fx:id="markAllReadBtn" text="✓ Mark All as Read" 
+                onAction="#markAllAsRead" styleClass="action-button"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Notifications List -->
+    <ScrollPane fx:id="scrollPane" fitToWidth="true" VBox.vgrow="ALWAYS" 
+                styleClass="notification-scroll">
+        <VBox fx:id="notificationsContainer" spacing="10" styleClass="notifications-list">
+            <padding>
+                <Insets top="5" right="5" bottom="5" left="5"/>
+            </padding>
+        </VBox>
+    </ScrollPane>
+
+    <!-- Footer info -->
+    <Label text="Click on a notification to see actions." 
+           styleClass="info-text" wrapText="true"/>
+</VBox>

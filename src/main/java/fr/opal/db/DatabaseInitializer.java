@@ -66,6 +66,19 @@ public class DatabaseInitializer {
                     "FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE" +
                     ");");
 
+            // Notifications Table
+            stmt.execute("CREATE TABLE IF NOT EXISTS notifications (" +
+                    "id INT PRIMARY KEY AUTO_INCREMENT," +
+                    "user_id INT NOT NULL," +
+                    "content TEXT NOT NULL," +
+                    "type ENUM('PROJECT', 'SOCIAL', 'GENERAL', 'INVITATION', 'COMMENT') DEFAULT 'GENERAL'," +
+                    "status ENUM('TO_READ', 'READ', 'HIDDEN') DEFAULT 'TO_READ'," +
+                    "creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                    "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE," +
+                    "INDEX idx_user_status (user_id, status)," +
+                    "INDEX idx_creation_date (creation_date)" +
+                    ");");
+
             LOGGER.info("Database schema initialized successfully.");
         } catch (SQLException e) {
             LOGGER.severe("Failed to initialize database schema: " + e.getMessage());

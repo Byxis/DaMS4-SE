@@ -28,6 +28,7 @@
 
             <HBox HBox.hgrow="ALWAYS" />
 
+            <Button fx:id="refreshBtn" mnemonicParsing="false" onAction="#refreshData" styleClass="navbar-button" style="-fx-font-size: 10;" text="🔄 Refresh" />
             <Button fx:id="settingsBtn" mnemonicParsing="false" onAction="#openSettings" styleClass="navbar-button" text="⚙" />
             <Button fx:id="logoutBtn" mnemonicParsing="false" onAction="#logout" styleClass="navbar-button" text="🚪" />
          </children>
@@ -41,9 +42,10 @@
             
             <Separator />
             
-            <HBox spacing="15">
+            <HBox spacing="15" alignment="CENTER_LEFT">
                <Label style="-fx-font-size: 16; -fx-font-weight: bold;" text="Your Projects" />
                <Button fx:id="invitationsBtn" mnemonicParsing="false" onAction="#openInvitations" style="-fx-font-size: 12;" text="📬 Invitations (0)" />
+               <Button fx:id="notificationsBtn" mnemonicParsing="false" onAction="#openNotifications" style="-fx-font-size: 12; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold;" text="🔔 Notifications (0)" />
             </HBox>
             <TextField promptText="🔍 Search projects..." style="-fx-padding: 8;" fx:id="homeSearchField" prefHeight="35"/>
             <ScrollPane fitToWidth="true" style="-fx-padding: 0;">

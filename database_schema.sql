@@ -44,3 +44,16 @@ CREATE TABLE IF NOT EXISTS session_settings (
     accent_color VARCHAR(20) DEFAULT 'BLACK',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Notifications table
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL,
+    type VARCHAR(20) NOT NULL DEFAULT 'GENERAL',
+    status VARCHAR(20) NOT NULL DEFAULT 'TO_READ',
+    creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_status (user_id, status),
+    INDEX idx_creation_date (creation_date)
+);

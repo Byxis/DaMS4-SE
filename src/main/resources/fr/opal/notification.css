@@ -1,0 +1,145 @@
+/* ========================================
+   NOTIFICATION STYLES
+   ======================================== */
+
+/* Header */
+.notification-header {
+    -fx-padding: 0 0 10 0;
+}
+
+.unread-badge {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: white;
+    -fx-padding: 5 12;
+    -fx-background-radius: 15;
+    -fx-font-size: 12;
+    -fx-font-weight: bold;
+}
+
+/* Notifications List */
+.notification-scroll {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.notification-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.notifications-list {
+    -fx-background-color: transparent;
+}
+
+/* Notification Card */
+.notification-card {
+    -fx-background-color: -fx-theme-bg-secondary;
+    -fx-border-color: -fx-theme-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0, 0, 2);
+}
+
+.notification-card:hover {
+    -fx-border-color: -fx-accent-color;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0, 0, 3);
+}
+
+/* Unread notification */
+.notification-card.unread {
+    -fx-border-left-color: #3498db;
+    -fx-border-left-width: 4;
+    -fx-background-color: derive(-fx-theme-bg-secondary, 5%);
+}
+
+/* Hidden notification */
+.notification-card.hidden {
+    -fx-opacity: 0.6;
+}
+
+/* Notification elements */
+.notification-icon {
+    -fx-font-size: 20;
+}
+
+.notification-type {
+    -fx-font-size: 12;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-theme-text-secondary;
+    -fx-text-transform: uppercase;
+}
+
+.notification-date {
+    -fx-font-size: 11;
+    -fx-text-fill: -fx-theme-text-muted;
+}
+
+.notification-content {
+    -fx-font-size: 14;
+    -fx-text-fill: -fx-theme-text;
+    -fx-wrap-text: true;
+}
+
+/* Action Buttons */
+.action-button {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+    -fx-font-size: 11;
+    -fx-padding: 6 12;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+.action-button:hover {
+    -fx-background-color: #2980b9;
+}
+
+.action-button-secondary {
+    -fx-background-color: #95a5a6;
+    -fx-text-fill: white;
+    -fx-font-size: 11;
+    -fx-padding: 6 12;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+.action-button-secondary:hover {
+    -fx-background-color: #7f8c8d;
+}
+
+.action-button-danger {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: white;
+    -fx-font-size: 11;
+    -fx-padding: 6 12;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+.action-button-danger:hover {
+    -fx-background-color: #c0392b;
+}
+
+/* Empty message */
+.empty-message {
+    -fx-font-size: 14;
+    -fx-text-fill: -fx-theme-text-muted;
+    -fx-padding: 40 0;
+    -fx-alignment: center;
+}
+
+/* Info text */
+.info-text {
+    -fx-font-size: 11;
+    -fx-text-fill: -fx-theme-text-muted;
+    -fx-padding: 10 0 0 0;
+}
+
+/* Dark theme adjustments */
+.dark .notification-card {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 4, 0, 0, 2);
+}
+
+.dark .notification-card.unread {
+    -fx-background-color: derive(-fx-theme-bg-secondary, 10%);
+}

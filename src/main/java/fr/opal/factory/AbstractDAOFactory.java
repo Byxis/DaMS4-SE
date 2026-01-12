@@ -1,6 +1,9 @@
 package fr.opal.factory;
 
+import fr.opal.dao.NotificationDAO;
 import fr.opal.dao.ProjectDAO;
+import fr.opal.dao.SessionDAO;
+import fr.opal.dao.UserDAO;
 
 /**
  * Abstract DAO Factory.
@@ -32,5 +35,8 @@ public abstract class AbstractDAOFactory {
         return instance;
     }
 
+    public abstract UserDAO createUserDAO();
+    public abstract SessionDAO createSessionDAO();
+    public abstract NotificationDAO createNotificationDAO();
     public abstract ProjectDAO createProjectDAO();
 }

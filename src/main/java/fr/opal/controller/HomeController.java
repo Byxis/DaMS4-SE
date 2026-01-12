@@ -1,6 +1,7 @@
 package fr.opal.controller;
 
 import fr.opal.facade.AuthFacade;
+import fr.opal.facade.NotificationFacade;
 import fr.opal.facade.SessionPropertiesFacade;
 import fr.opal.facade.ProjectFacade;
 import fr.opal.service.SceneManager;
@@ -46,11 +47,16 @@ public class HomeController {
     @FXML
     private Button invitationsBtn;
     @FXML
+    private Button notificationsBtn;
+    @FXML
+    private Button refreshBtn;
+    @FXML
     private VBox projectsContainer;
     @FXML
     private TextField homeSearchField;
 
     private AuthFacade authFacade;
+    private NotificationFacade notificationFacade;
     private SessionPropertiesFacade sessionPropertiesFacade;
     private ProjectFacade projectFacade;
     private SceneManager sceneManager;
@@ -61,6 +67,7 @@ public class HomeController {
 
     public HomeController() {
         this.authFacade = AuthFacade.getInstance();
+        this.notificationFacade = NotificationFacade.getInstance();
         this.sessionPropertiesFacade = SessionPropertiesFacade.getInstance();
         this.projectFacade = ProjectFacade.getInstance();
         this.sceneManager = SceneManager.getInstance();
@@ -98,6 +105,7 @@ public class HomeController {
         try {
             loadAndDisplayProjects();
             updateInvitationCount();
+            updateNotificationCount();
         } catch (Exception e) {
             System.err.println("Error loading projects: " + e.getMessage());
             e.printStackTrace();
@@ -704,6 +712,20 @@ public class HomeController {
     }
 
     /**
+     * Refresh all data (projects, invitations, notifications)
+     */
+    @FXML
+    private void refreshData() {
+        try {
+            loadAndDisplayProjects();
+            updateInvitationCount();
+            updateNotificationCount();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * Update invitation button count
      */
     private void updateInvitationCount() {
@@ -711,6 +733,89 @@ public class HomeController {
             List<ProjectInvitation> pendingInvitations = projectFacade.getPendingInvitations(currentSession.getUsername());
             invitationsBtn.setText("📬 Invitations (" + pendingInvitations.size() + ")");
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Update notification button with unread count
+     */
+    private void updateNotificationCount() {
+        try {
+            if (currentSession != null && notificationsBtn != null) {
+                int unreadCount = notificationFacade.getUnreadCount(currentSession.getUserId());
+                notificationsBtn.setText("🔔 Notifications (" + unreadCount + ")");
+                
+                // Keep red style with count
+                if (unreadCount > 0) {
+                    notificationsBtn.setStyle("-fx-font-size: 12; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold;");
+                } else {
+                    notificationsBtn.setStyle("-fx-font-size: 12; -fx-background-color: #95a5a6; -fx-text-fill: white;");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Opens the notifications dialog
+     */
+    @FXML
+    private void openNotifications() {
+        try {
+            // Create controller before loading FXML
+            NotificationController notificationController = new NotificationController();
+            
+            // Create FXMLLoader and set controller manually
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fr/opal/notification-view.fxml"));
+            loader.setController(notificationController);
+            Parent notificationContent = loader.load();
+            
+            Dialog<Void> dialog = new Dialog<>();
+            dialog.setTitle("Notifications");
+            
+            // Add stylesheet
+            dialog.getDialogPane().getStylesheets().add(getClass().getResource("/fr/opal/style.css").toExternalForm());
+            dialog.getDialogPane().getStylesheets().add(getClass().getResource("/fr/opal/notification.css").toExternalForm());
+            
+            // Apply theme
+            sessionPropertiesFacade.applyTheme(dialog.getDialogPane());
+            
+            // Set content
+            dialog.getDialogPane().setContent(notificationContent);
+            sessionPropertiesFacade.applyTheme(notificationContent);
+            
+            // Add close button
+            dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+            
+            // Style close button
+            String accentColor = sessionPropertiesFacade.getSettings().getAccentColor().getHexCode();
+            String textColor = ColorUtil.getContrastTextColor(accentColor);
+            dialog.getDialogPane().lookupAll(".button").forEach(node -> {
+                if (node instanceof javafx.scene.control.Button) {
+                    javafx.scene.control.Button btn = (javafx.scene.control.Button) node;
+                    btn.setStyle(
+                        "-fx-background-color: " + accentColor + "; " +
+                        "-fx-text-fill: " + textColor + "; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 8px 16px;"
+                    );
+                }
+            });
+            
+            // Initialize controller
+            notificationController.initialize();
+            
+            // Set callback to update count when notifications change
+            notificationController.setOnNotificationChanged(this::updateNotificationCount);
+            
+            dialog.showAndWait();
+            
+            // Update count after dialog closes
+            updateNotificationCount();
+            
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

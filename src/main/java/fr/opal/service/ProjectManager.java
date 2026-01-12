@@ -3,6 +3,8 @@ package fr.opal.service;
 import fr.opal.dao.ProjectDAO;
 import fr.opal.exception.ProjectException;
 import fr.opal.factory.AbstractDAOFactory;
+import fr.opal.manager.NotificationManager;
+import fr.opal.type.ENotifType;
 import fr.opal.type.EPermission;
 import fr.opal.type.EProjectState;
 import fr.opal.type.Project;
@@ -56,6 +58,13 @@ public class ProjectManager {
         Project project = new Project(name, description, owner);
         int projectId = projectDAO.createProject(project);
         project.setProjectId(projectId);
+        
+        // Send notification to owner about project creation
+        NotificationManager.getInstance().sendNotification(
+            owner, 
+            ENotifType.PROJECT, 
+            "Project '" + name + "' has been created successfully!"
+        );
         
         this.loadedProjects.add(project);
         return project;
@@ -115,6 +124,16 @@ public class ProjectManager {
         if (project != null) {
             project.addCollaborator(invitation.getInvitedUsername(), invitation.getSuggestedPermission());
             projectDAO.saveProjectCollaborators(project.getProjectId(), project.getCollaborators());
+            
+            // Send notification to project owner that invitation was accepted
+            User projectOwner = project.getOwner();
+            if (projectOwner != null) {
+                NotificationManager.getInstance().sendNotification(
+                    projectOwner,
+                    ENotifType.PROJECT,
+                    "User '" + invitation.getInvitedUsername() + "' has accepted the invitation to join project '" + project.getName() + "'!"
+                );
+            }
         }
     }
 
